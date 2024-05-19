@@ -1,0 +1,19 @@
+{
+  "name": "portfolio-v3-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "boards": "pnpm --filter boards run dev",
+    "messageBox": "pnpm -C src/messageBox run dev",
+    "dev": "pnpm -r dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.3"
+  }
+}
