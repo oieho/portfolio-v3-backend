@@ -4,5 +4,12 @@
     "useTabs":false,
     "tabWidth":2,
     "trailingComma":"all",
-    "printWidth":80
+    "printWidth":80,
+      "prettier/prettier": [
+    "error",
+    {},
+    {
+      "usePrettierrc": false
+    }
+  ]
 }
