@@ -161,6 +161,10 @@ export class AuthService {
     }
   }
 
+  async removeRefreshToken(userId: string): Promise<any> {
+    return await this.authRepository.delete(userId);
+  }
+
   findAll() {
     return `This action returns all auth`;
   }
