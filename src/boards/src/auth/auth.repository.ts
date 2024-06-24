@@ -35,9 +35,11 @@ export class AuthMongoRepository implements AuthRepository {
   async getUserIdAndPassword(userId: string): Promise<UserDocument> {
     return await this.userModel.findById(userId).exec();
   }
+
   async getRefreshToken(userId: string): Promise<RefreshTokenDto> {
     return await this.refreshTokenModel.findOne({ userId });
   }
+
   async updateRefreshToken(
     userId: String,
     currentRefreshTokenSet: {
@@ -53,5 +55,9 @@ export class AuthMongoRepository implements AuthRepository {
       },
       { upsert: true },
     );
+  }
+
+  async delete(userId: string): Promise<any> {
+    return await this.refreshTokenModel.deleteOne({ userId: userId });
   }
 }
