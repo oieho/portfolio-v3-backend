@@ -26,7 +26,7 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
-
+import { ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
 // import { AuthService, JwtAuthGuard, JwtRefreshGuard, UserService } from '@backend/domain';
 
 @Controller('auth')
@@ -38,6 +38,20 @@ export class AuthController {
 
   @HttpCode(200)
   @Post('login')
+  @ApiOperation({
+    summary: '로그인',
+    description: '로그인 성공시 access/refresh Tokens 발급',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', example: 'user1' },
+        password: { type: 'string', example: 'password123' },
+      },
+      required: ['username', 'password'],
+    },
+  })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,

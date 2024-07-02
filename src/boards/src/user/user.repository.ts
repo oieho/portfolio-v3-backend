@@ -17,11 +17,7 @@ export interface UserRepository {
 }
 @Injectable()
 export class UserMongoRepository implements UserRepository {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(RefreshToken.name)
-    private refreshTokenModel: Model<RefreshTokenDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async findUserById(userId: string): Promise<UserDto> {
     return await this.userModel.findOne({ userId });
