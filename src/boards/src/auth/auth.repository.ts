@@ -7,11 +7,8 @@ import {
   RefreshToken,
   RefreshTokenDocument,
 } from '../schemas/refresh-token.schema';
-import { UserDto } from './../user/dto/user.dto';
 
 export interface AuthRepository {
-  findUserById(userId: string): Promise<UserDto>;
-  getUserIdAndPassword(userId: string);
   updateRefreshToken(
     userId: string,
     currentRefreshTokenSet: {
@@ -27,14 +24,6 @@ export class AuthMongoRepository implements AuthRepository {
     @InjectModel(RefreshToken.name)
     private refreshTokenModel: Model<RefreshTokenDocument>,
   ) {}
-
-  async findUserById(userId: string): Promise<UserDto> {
-    return await this.userModel.findById(userId);
-  }
-
-  async getUserIdAndPassword(userId: string): Promise<UserDocument> {
-    return await this.userModel.findById(userId).exec();
-  }
 
   async getRefreshToken(userId: string): Promise<RefreshTokenDto> {
     return await this.refreshTokenModel.findOne({ userId });

@@ -41,7 +41,7 @@ export class JwtAuthGuard implements CanActivate {
     const refreshExp = this.extractExpiration(oldRefreshToken);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
-    if (path !== '/authenticate') {
+    if (path !== '/auth/authenticate') {
       if (
         accessExp > currentTimeInSeconds &&
         refreshExp <= currentTimeInSeconds
@@ -103,8 +103,11 @@ export class JwtAuthGuard implements CanActivate {
       ) {
         throw new UnauthorizedException('All Tokens are invalid.');
       }
+    } else if (path === '/auth/authenticate') {
+      const user = await this.jwtService.verify(oldAccessToken);
+      request.user = user;
+      return request.user;
     }
-    return true;
   }
 
   private extractAccessToken(request: any): string | null {

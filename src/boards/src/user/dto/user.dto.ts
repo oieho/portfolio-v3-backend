@@ -16,6 +16,13 @@ export class LoginUserDto {
   password: string;
 }
 
+export class UserIdDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  userId: string;
+}
+
 export class UserDto {
   @IsString()
   @IsNotEmpty()
@@ -23,6 +30,7 @@ export class UserDto {
   userId: string;
 
   @IsString()
+  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(20)
   @IsAlphanumeric()
@@ -47,4 +55,6 @@ export class UserDto {
 
   @IsNotEmpty()
   joinDate: Date;
+
+  modDate: Date;
 }

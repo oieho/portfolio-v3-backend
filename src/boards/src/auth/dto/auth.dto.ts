@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsDate } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsDate,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 

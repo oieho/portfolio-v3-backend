@@ -10,7 +10,7 @@ import {
 } from '../schemas/refresh-token.schema';
 
 export interface UserRepository {
-  findUserById(userId: string): Promise<UserDto>;
+  findUser(userId: string): Promise<UserDto>;
   getAllPost(): Promise<UserDto[]>;
   createPost(postDto: LoginUserDto);
   deletePost(userId: string);
@@ -19,8 +19,32 @@ export interface UserRepository {
 export class UserMongoRepository implements UserRepository {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findUserById(userId: string): Promise<UserDto> {
+  async findUser(userId: string): Promise<UserDto> {
     return await this.userModel.findOne({ userId });
+  }
+
+  async saveUser(user: UserDto): Promise<UserDto> {
+    const newUser = new this.userModel(user);
+    return await newUser.save();
+  }
+
+  async findByUserIdAndUpdate(
+    userId: string,
+    userDto: UserDto,
+  ): Promise<UserDto> {
+    userDto.modDate = new Date();
+    try {
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        { userId },
+        userDto,
+        { new: true },
+      );
+      return updatedUser;
+    } catch (error) {
+      throw new Error(
+        `Failed to update user with userId ${userId}: ${error.message}`,
+      );
+    }
   }
 
   async getAllPost(): Promise<UserDto[]> {
@@ -50,6 +74,7 @@ export class UserMongoRepository implements UserRepository {
       socialMedia: user.socialMedia,
       role: user.role,
       joinDate: user.joinDate,
+      modDate: user.modDate,
     };
   }
 }

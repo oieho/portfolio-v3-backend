@@ -5,11 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { User } from '../schemas/user.schema';
 import { UserService } from './../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-
 import { LoginDto, AuthTokenDto } from './../auth/dto/auth.dto';
 import { UserDto } from './../user/dto/user.dto';
 import { RefreshTokenDto } from './dto/auth.dto';
@@ -35,7 +33,7 @@ export class AuthService {
     // const hashedPassword = await bcrypt.hash(loginDto.password, 10);
     // console.log('@@' + hashedPassword);
 
-    const user = await this.userService.findUserById(loginDto.userId);
+    const user = await this.userService.findUser(loginDto.userId);
     if (!user) {
       throw new NotFoundException('User not found!');
     }
@@ -79,7 +77,7 @@ export class AuthService {
         },
       );
     } catch (error) {
-      console.log('EERORRR:::' + error);
+      console.log(error);
     }
   }
 

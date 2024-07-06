@@ -40,6 +40,9 @@ export class User {
 
   @Prop({ type: Date, default: Date.now })
   joinDate: Date;
+
+  @Prop({ type: Date, default: Date.now })
+  modDate: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

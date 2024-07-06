@@ -18,8 +18,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { AuthTokenDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
-import { UserDto } from './../user/dto/user.dto';
+import { AuthTokenDto, LoginDto } from './dto/auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UserService } from './../user/user.service';
 import { AuthService } from './auth.service';
@@ -62,7 +61,7 @@ export class AuthController {
     // 유저 객체에 refresh-token 데이터 저장
     await this.authService.setCurrentRefreshToken(user.userId, refresh_token);
 
-    res.setHeader('Authorization', 'Bearer ' + [access_token]);
+    res.setHeader('authorization', 'Bearer ' + [access_token]);
     res.cookie('access_token', access_token, {
       httpOnly: true,
     });
@@ -89,7 +88,8 @@ export class AuthController {
   @Get('authenticate')
   @UseGuards(JwtAuthGuard)
   async user(@Req() req: any, @Res() res: Response): Promise<any> {
-    const verifiedUser: any = await this.userService.findUserById(req.userId);
+    const verifiedUser: any = await this.userService.findUser(req.user.userId);
+    console.log('@@', verifiedUser); // 객체 전체를 출력
 
     return res.send(verifiedUser);
   }
@@ -135,12 +135,12 @@ export class AuthController {
       }
 
       const refreshToken = await this.authService.getRefreshTokenByUserId(
-        user.userId,
+        user?.userId,
       );
 
       if (
-        refreshToken.currentRefreshTokenExp &&
-        isRefreshTokenExpired(refreshToken.currentRefreshTokenExp)
+        refreshToken?.currentRefreshTokenExp &&
+        isRefreshTokenExpired(refreshToken?.currentRefreshTokenExp)
       ) {
         console.log('3일 이하 리프레시 토큰 재발급');
         const refresh_token = await this.authService.generateRefreshToken(user);
