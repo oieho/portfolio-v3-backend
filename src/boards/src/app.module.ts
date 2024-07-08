@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { RefreshTokenSchema } from './schemas/refresh-token.schema';
 import { UserSchema } from './schemas/user.schema';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserSchema } from './schemas/user.schema';
       { name: 'RefreshToken', schema: RefreshTokenSchema },
       { name: 'User', schema: UserSchema },
     ]),
+    EmailModule,
   ],
 
   controllers: [AppController],
