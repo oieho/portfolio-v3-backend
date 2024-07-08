@@ -13,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nestjs/platform-express": "^10.3.10",
+    "@types/multer": "^1.4.11",
+    "multer": "1.4.5-lts.1",
     "prettier": "^3.0.0",
     "typescript": "^5.1.3"
   }
