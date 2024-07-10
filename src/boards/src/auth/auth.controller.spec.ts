@@ -70,6 +70,7 @@ describe('AuthController', () => {
       socialMedia: 'none',
       role: 'user',
       joinDate: new Date(),
+      modDate: new Date(),
     };
 
     // Mock AuthService의 validateUser 메서드

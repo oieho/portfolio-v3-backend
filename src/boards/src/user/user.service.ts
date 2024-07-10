@@ -32,7 +32,6 @@ export class UserService {
 
     // ❻ 패드워드 암호화
     const encryptedPassword = bcrypt.hashSync(userDto.password, 10);
-    console.log(encryptedPassword);
     try {
       const user = await this.createUser({
         ...userDto,
