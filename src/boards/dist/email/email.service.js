@@ -12,8 +12,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailService = void 0;
 const common_1 = require("@nestjs/common");
 const mailer_1 = require("@nestjs-modules/mailer");
+const user_service_1 = require("../user/user.service");
 let EmailService = class EmailService {
-    constructor(mailerService) {
+    constructor(userService, mailerService) {
+        this.userService = userService;
         this.mailerService = mailerService;
     }
     async sendEmail(sender, subject, emailAddress, content, file, files) {
@@ -40,8 +42,27 @@ let EmailService = class EmailService {
             attachments: attachments.length > 0 ? attachments : [],
         };
         try {
-            const result = await this.mailerService.sendMail(mailOptions);
-            return result;
+            await this.mailerService.sendMail(mailOptions);
+            return;
+        }
+        catch (error) {
+            throw new Error(`Failed to send email: ${error.message}`);
+        }
+    }
+    async sendEmailToFindTheID(name, email) {
+        const id = await this.userService.findUserId(name);
+        const mailOptions = {
+            to: email,
+            subject: 'OIEHO 아이디 찾기 메일입니다.',
+            html: `
+      <p>아이디 찾기를 요청하셨습니다. 아이디는 다음과 같습니다.</p>
+      <br>
+      <span style='font-size:2rem;font-weight:bold;'>${id}</span>
+    `,
+        };
+        try {
+            await this.mailerService.sendMail(mailOptions);
+            return;
         }
         catch (error) {
             throw new Error(`Failed to send email: ${error.message}`);
@@ -51,6 +72,7 @@ let EmailService = class EmailService {
 exports.EmailService = EmailService;
 exports.EmailService = EmailService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [mailer_1.MailerService])
+    __metadata("design:paramtypes", [user_service_1.UserService,
+        mailer_1.MailerService])
 ], EmailService);
 //# sourceMappingURL=email.service.js.map

@@ -7,12 +7,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailModule = void 0;
+const mongoose_1 = require("@nestjs/mongoose");
 const common_1 = require("@nestjs/common");
 const mailer_1 = require("@nestjs-modules/mailer");
 const config_1 = require("@nestjs/config");
 const email_controller_1 = require("./email.controller");
 const email_service_1 = require("./email.service");
+const user_service_1 = require("../user/user.service");
+const user_repository_1 = require("./../user/user.repository");
 const platform_express_1 = require("@nestjs/platform-express");
+const user_schema_1 = require("./../schemas/user.schema");
 let EmailModule = class EmailModule {
 };
 exports.EmailModule = EmailModule;
@@ -31,11 +35,12 @@ exports.EmailModule = EmailModule = __decorate([
                     },
                 },
             }),
+            mongoose_1.MongooseModule.forFeature([{ name: 'User', schema: user_schema_1.UserSchema }]),
             platform_express_1.MulterModule.register({
                 dest: './uploads',
             }),
         ],
-        providers: [email_service_1.EmailService],
+        providers: [user_service_1.UserService, user_repository_1.UserMongoRepository, email_service_1.EmailService],
         exports: [mailer_1.MailerModule],
         controllers: [email_controller_1.EmailController],
     })

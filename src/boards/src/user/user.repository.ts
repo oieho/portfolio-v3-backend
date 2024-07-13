@@ -1,4 +1,4 @@
-import { LoginUserDto } from './dto/user.dto';
+import { UserIdAndPasswordDto } from './dto/user.dto';
 import { UserDto } from './dto/user.dto';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -12,15 +12,41 @@ import {
 export interface UserRepository {
   findUser(userId: string): Promise<UserDto>;
   getAllPost(): Promise<UserDto[]>;
-  createPost(postDto: LoginUserDto);
+  createPost(postDto: UserIdAndPasswordDto);
   deletePost(userId: string);
 }
 @Injectable()
 export class UserMongoRepository implements UserRepository {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findUser(userId: string): Promise<UserDto> {
+  async findUser(userId: string): Promise<UserDto | any> {
     return await this.userModel.findOne({ userId });
+  }
+
+  async findUserId(name: string): Promise<any> {
+    const user = await this.userModel.findOne({ name }, 'userId');
+
+    return user.userId;
+  }
+
+  async findUserName(name: string): Promise<any> {
+    const userName = (await this.userModel.findOne({ name })) as string;
+
+    return userName;
+  }
+
+  async findUserEmail(email: string): Promise<any> {
+    const userEmail = (await this.userModel.findOne({ email })) as string;
+
+    return userEmail;
+  }
+
+  async findUserNameAndUserEmail(name: string, email: string): Promise<Object> {
+    const ifMatches = await this.userModel.findOne(
+      { name, email },
+      'name email',
+    );
+    return ifMatches;
   }
 
   async saveUser(user: UserDto): Promise<UserDto> {
@@ -39,7 +65,7 @@ export class UserMongoRepository implements UserRepository {
         userDto,
         { new: true },
       );
-      return updatedUser;
+      return updatedUser.toObject();
     } catch (error) {
       throw new Error(
         `Failed to update user with userId ${userId}: ${error.message}`,
@@ -52,7 +78,7 @@ export class UserMongoRepository implements UserRepository {
     return users.map((user) => this.toUserDto(user));
   }
 
-  async createPost(postDto: LoginUserDto) {
+  async createPost(postDto: UserIdAndPasswordDto) {
     const createPost = {
       ...postDto,
       createdDt: new Date(),

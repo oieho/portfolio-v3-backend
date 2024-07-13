@@ -4,4 +4,5 @@ export declare class EmailController {
     private readonly emailService;
     constructor(emailService: EmailService);
     sendEmail(file: Express.Multer.File, files: Express.Multer.File[], sender: string, subject: string, emailAddress: string, content: string): Promise<any>;
+    findId(name: string, email: string): Promise<any>;
 }

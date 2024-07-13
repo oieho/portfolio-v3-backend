@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { UserService } from '../user/user.service';
 import { Express } from 'express';
 
 @Injectable()
 export class EmailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly mailerService: MailerService,
+  ) {}
 
   async sendEmail(
     sender: string,
@@ -37,14 +41,34 @@ export class EmailService {
 
     const mailOptions = {
       to: 'oiehomail@gmail.com',
-      subject:subject + '   -   보낸사람 : ' + sender + '(' + emailAddress + ')',
+      subject:
+        subject + '   -   보낸사람 : ' + sender + '(' + emailAddress + ')',
       text: content,
       attachments: attachments.length > 0 ? attachments : [],
     };
 
     try {
-      const result = await this.mailerService.sendMail(mailOptions);
-      return result;
+      await this.mailerService.sendMail(mailOptions);
+      return;
+    } catch (error) {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+  }
+
+  async sendEmailToFindTheID(name: string, email: string): Promise<any> {
+    const id = await this.userService.findUserId(name);
+    const mailOptions = {
+      to: email,
+      subject: 'OIEHO 아이디 찾기 메일입니다.',
+      html: `
+      <p>아이디 찾기를 요청하셨습니다. 아이디는 다음과 같습니다.</p>
+      <br>
+      <span style='font-size:2rem;font-weight:bold;'>${id}</span>
+    `,
+    };
+    try {
+      await this.mailerService.sendMail(mailOptions);
+      return;
     } catch (error) {
       throw new Error(`Failed to send email: ${error.message}`);
     }

@@ -1,9 +1,6 @@
-export declare class LoginUserDto {
+export declare class UserIdAndPasswordDto {
     userId: string;
     password: string;
-}
-export declare class UserIdDto {
-    userId: string;
 }
 export declare class UserDto {
     userId: string;

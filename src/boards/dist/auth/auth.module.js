@@ -22,12 +22,14 @@ const user_repository_1 = require("./../user/user.repository");
 const refresh_token_schema_1 = require("./../schemas/refresh-token.schema");
 const user_schema_1 = require("./../schemas/user.schema");
 const user_module_1 = require("./../user/user.module");
+const redis_module_1 = require("../redis/redis.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            redis_module_1.RedisModule,
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),

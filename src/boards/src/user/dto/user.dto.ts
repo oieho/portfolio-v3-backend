@@ -16,13 +16,6 @@ export class LoginUserDto {
   password: string;
 }
 
-export class UserIdDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  userId: string;
-}
-
 export class UserDto {
   @IsString()
   @IsNotEmpty()

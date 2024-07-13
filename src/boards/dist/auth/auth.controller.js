@@ -31,9 +31,7 @@ let AuthController = class AuthController {
         const refresh_token = await this.authService.generateRefreshToken(user);
         await this.authService.setCurrentRefreshToken(user.userId, refresh_token);
         res.setHeader('authorization', 'Bearer ' + [access_token]);
-        res.cookie('access_token', access_token, {
-            httpOnly: true,
-        });
+        await this.authService.saveAccessToken(user.userId, access_token);
         res.cookie('refresh_token', refresh_token, {
             httpOnly: true,
         });
@@ -44,8 +42,9 @@ let AuthController = class AuthController {
         };
     }
     async logout(req, res) {
-        await this.authService.removeRefreshToken(req.user.id);
-        res.clearCookie('access_token');
+        const userId = req.userId;
+        await this.authService.removeRefreshToken(userId);
+        await this.authService.deleteAccessToken(userId);
         res.clearCookie('refresh_token');
         return res.send({
             message: 'logout success',
@@ -105,10 +104,10 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                username: { type: 'string', example: 'user1' },
+                name: { type: 'string', example: 'user1' },
                 password: { type: 'string', example: 'password123' },
             },
-            required: ['username', 'password'],
+            required: ['name', 'password'],
         },
     }),
     __param(0, (0, common_1.Body)()),
@@ -119,7 +118,7 @@ __decorate([
 ], AuthController.prototype, "login", null);
 __decorate([
     (0, common_1.Post)('logout'),
-    __param(0, (0, common_1.Req)()),
+    __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),

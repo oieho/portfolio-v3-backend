@@ -12,7 +12,10 @@ export declare class UserController {
     constructor(authService: AuthService, userService: UserService, jwtService: JwtService);
     register(userDto: UserDto): Promise<UserDto>;
     modifyUserByUserId(userId: string, userDto: UserDto): Promise<UserDto>;
-    getMyInfo(request: Request, response: Response): Promise<any>;
+    getMyInfo(userId: string, request: Request, response: Response): Promise<any>;
+    confirmUserName(name: string): Promise<boolean>;
+    confirmUserEmail(email: string): Promise<boolean>;
+    confirmIfMatchNameAndEmail(name: string, email: string): Promise<boolean>;
     create(createUserDto: CreateUserDto): string;
     findAll(): string;
     findOne(userId: string): string;

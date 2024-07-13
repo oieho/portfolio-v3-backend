@@ -32,18 +32,19 @@ let UserController = class UserController {
     async modifyUserByUserId(userId, userDto) {
         return this.userService.modifyUserByUserId(userId, userDto);
     }
-    async getMyInfo(request, response) {
-        const accessToken = request.cookies['access_token'];
-        const refreshToken = request.cookies['refresh_token'];
+    async getMyInfo(userId, request, response) {
+        console.log(userId);
+        const accessToken = (await this.authService.getAccessToken(userId));
+        const refreshToken = await request.cookies['refresh_token'];
         console.log('accessToken::', accessToken);
         console.log('refreshToken::', refreshToken);
         if ((!accessToken && !refreshToken) ||
-            (accessToken === 'undefined' && refreshToken === undefined)) {
+            (accessToken === null && refreshToken === undefined)) {
             console.log("isn't authorized.");
             throw new common_1.UnauthorizedException('No tokens were found.');
         }
         let token = accessToken;
-        if (accessToken === 'undefined') {
+        if (accessToken === null) {
             token = refreshToken;
         }
         let extractedJwtClaims;
@@ -58,6 +59,18 @@ let UserController = class UserController {
         const member = await this.userService.readUserInfo(user.userId);
         console.log('member::' + member);
         return response.status(200).json(member);
+    }
+    async confirmUserName(name) {
+        const result = await this.userService.findUserName(name);
+        return result;
+    }
+    async confirmUserEmail(email) {
+        const result = await this.userService.findUserEmail(email);
+        return result;
+    }
+    async confirmIfMatchNameAndEmail(name, email) {
+        const result = await this.userService.existsByUserNameAndUserEmail(name, email);
+        return result;
     }
     create(createUserDto) {
         return this.userService.create(createUserDto);
@@ -93,12 +106,35 @@ __decorate([
 ], UserController.prototype, "modifyUserByUserId", null);
 __decorate([
     (0, common_1.Get)('userInfo'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Res)()),
+    __param(0, (0, common_1.Body)('userId')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getMyInfo", null);
+__decorate([
+    (0, common_1.Post)('nameChk'),
+    __param(0, (0, common_1.Body)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "confirmUserName", null);
+__decorate([
+    (0, common_1.Post)('emailChk'),
+    __param(0, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "confirmUserEmail", null);
+__decorate([
+    (0, common_1.Post)('ifMatchNameAndEmail'),
+    __param(0, (0, common_1.Body)('name')),
+    __param(1, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "confirmIfMatchNameAndEmail", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

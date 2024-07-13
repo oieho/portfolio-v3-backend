@@ -9,7 +9,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserDto, UserIdDto } from './dto/user.dto';
+import { UserDto } from './dto/user.dto';
 import { LoginDto } from './../auth/dto/auth.dto';
 import { UserMongoRepository } from './user.repository';
 import { Model, Types } from 'mongoose';
@@ -62,13 +62,43 @@ export class UserService {
     return this.userRepository.findByUserIdAndUpdate(userId, userDto);
   }
 
-  async findUser(userId): Promise<UserIdDto | any> {
+  async findUser(userId: string): Promise<string | any> {
     const result = await this.userRepository.findUser(userId);
     return result;
   }
 
-  async readUserInfo(user: string): Promise<UserDto> {
-    const result = await this.userRepository.findUser(user);
+  async findUserId(name: string): Promise<string> {
+    const result = await this.userRepository.findUserId(name);
+    return result;
+  }
+
+  async findUserName(name: string): Promise<boolean> {
+    const result = await this.userRepository.findUserName(name);
+    return result && result.name === name;
+  }
+
+  async findUserEmail(email: string): Promise<boolean> {
+    const result = await this.userRepository.findUserEmail(email);
+    return result && result.email === email;
+  }
+
+  async existsByUserNameAndUserEmail(
+    name: string,
+    email: string,
+  ): Promise<boolean> {
+    const result = await this.userRepository.findUserNameAndUserEmail(
+      name,
+      email,
+    );
+    if (result != null) {
+      return true;
+    } else if (result === null) {
+      return false;
+    }
+  }
+
+  async readUserInfo(userId: string): Promise<UserDto> {
+    const result = await this.userRepository.findUser(userId);
     console.log('RESULT::' + result);
     return result;
   }

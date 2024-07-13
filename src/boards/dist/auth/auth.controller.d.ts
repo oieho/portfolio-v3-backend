@@ -9,7 +9,7 @@ export declare class AuthController {
     constructor(authService: AuthService, userService: UserService);
     login(loginDto: LoginDto, res: Response): Promise<any>;
     logout(req: any, res: Response): Promise<any>;
-    user(req: any, res: Response): Promise<any>;
+    user(req: any, res: Response): Promise<object>;
     findAll(): string;
     findOne(userId: string): string;
     update(userId: string, updateAuthDto: UpdateAuthDto): string;

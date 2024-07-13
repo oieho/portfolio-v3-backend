@@ -24,6 +24,22 @@ let UserMongoRepository = class UserMongoRepository {
     async findUser(userId) {
         return await this.userModel.findOne({ userId });
     }
+    async findUserId(name) {
+        const user = await this.userModel.findOne({ name }, 'userId');
+        return user.userId;
+    }
+    async findUserName(name) {
+        const userName = (await this.userModel.findOne({ name }));
+        return userName;
+    }
+    async findUserEmail(email) {
+        const userEmail = (await this.userModel.findOne({ email }));
+        return userEmail;
+    }
+    async findUserNameAndUserEmail(name, email) {
+        const ifMatches = await this.userModel.findOne({ name, email }, 'name email');
+        return ifMatches;
+    }
     async saveUser(user) {
         const newUser = new this.userModel(user);
         return await newUser.save();
@@ -32,7 +48,7 @@ let UserMongoRepository = class UserMongoRepository {
         userDto.modDate = new Date();
         try {
             const updatedUser = await this.userModel.findOneAndUpdate({ userId }, userDto, { new: true });
-            return updatedUser;
+            return updatedUser.toObject();
         }
         catch (error) {
             throw new Error(`Failed to update user with userId ${userId}: ${error.message}`);

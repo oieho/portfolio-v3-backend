@@ -23,7 +23,6 @@ let UserService = class UserService {
             throw new common_1.HttpException('해당 유저가 이미 있습니다.', common_1.HttpStatus.BAD_REQUEST);
         }
         const encryptedPassword = bcrypt.hashSync(userDto.password, 10);
-        console.log(encryptedPassword);
         try {
             const user = await this.createUser({
                 ...userDto,
@@ -54,8 +53,29 @@ let UserService = class UserService {
         const result = await this.userRepository.findUser(userId);
         return result;
     }
-    async readUserInfo(user) {
-        const result = await this.userRepository.findUser(user);
+    async findUserId(name) {
+        const result = await this.userRepository.findUserId(name);
+        return result;
+    }
+    async findUserName(name) {
+        const result = await this.userRepository.findUserName(name);
+        return result && result.name === name;
+    }
+    async findUserEmail(email) {
+        const result = await this.userRepository.findUserEmail(email);
+        return result && result.email === email;
+    }
+    async existsByUserNameAndUserEmail(name, email) {
+        const result = await this.userRepository.findUserNameAndUserEmail(name, email);
+        if (result != null) {
+            return true;
+        }
+        else if (result === null) {
+            return false;
+        }
+    }
+    async readUserInfo(userId) {
+        const result = await this.userRepository.findUser(userId);
         console.log('RESULT::' + result);
         return result;
     }

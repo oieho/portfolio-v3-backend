@@ -45,10 +45,10 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        username: { type: 'string', example: 'user1' },
+        name: { type: 'string', example: 'user1' },
         password: { type: 'string', example: 'password123' },
       },
-      required: ['username', 'password'],
+      required: ['name', 'password'],
     },
   })
   async login(
@@ -87,8 +87,10 @@ export class AuthController {
 
   @Get('authenticate')
   @UseGuards(JwtAuthGuard)
-  async user(@Req() req: any, @Res() res: Response): Promise<any> {
-    const verifiedUser: any = await this.userService.findUser(req.user.userId);
+  async user(@Req() req: any, @Res() res: Response): Promise<object> {
+    const verifiedUser: Object = await this.userService.findUser(
+      req.user.userId,
+    );
     console.log('@@', verifiedUser); // 객체 전체를 출력
 
     return res.send(verifiedUser);

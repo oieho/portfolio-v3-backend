@@ -87,6 +87,30 @@ export class UserController {
     return response.status(200).json(member);
   }
 
+  @Post('nameChk')
+  async confirmUserName(@Body('name') name: string): Promise<boolean> {
+    const result = await this.userService.findUserName(name);
+    return result;
+  }
+
+  @Post('emailChk')
+  async confirmUserEmail(@Body('email') email: string): Promise<boolean> {
+    const result = await this.userService.findUserEmail(email);
+    return result;
+  }
+
+  @Post('ifMatchNameAndEmail')
+  async confirmIfMatchNameAndEmail(
+    @Body('name') name: string,
+    @Body('email') email: string,
+  ): Promise<boolean> {
+    const result = await this.userService.existsByUserNameAndUserEmail(
+      name,
+      email,
+    );
+    return result;
+  }
+
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);

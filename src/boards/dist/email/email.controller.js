@@ -22,11 +22,22 @@ let EmailController = class EmailController {
     }
     async sendEmail(file, files, sender, subject, emailAddress, content) {
         try {
-            const result = await this.emailService.sendEmail(sender, subject, emailAddress, content, file, files);
-            return { message: 'Email sent successfully!', result };
+            await this.emailService.sendEmail(sender, subject, emailAddress, content, file, files);
+            return { message: 'Email sent successfully!' };
         }
         catch (error) {
             return { message: 'Failed to send email.', error };
+        }
+    }
+    async findId(name, email) {
+        try {
+            await this.emailService.sendEmailToFindTheID(name, email);
+            return {
+                message: 'By sending the email, find the ID. Email sent successfully!',
+            };
+        }
+        catch (error) {
+            return { message: 'Failed to send the email to find the ID.', error };
         }
     }
 };
@@ -44,6 +55,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Array, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], EmailController.prototype, "sendEmail", null);
+__decorate([
+    (0, common_1.Post)('/sendEmailToFindId'),
+    __param(0, (0, common_1.Body)('name')),
+    __param(1, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EmailController.prototype, "findId", null);
 exports.EmailController = EmailController = __decorate([
     (0, common_1.Controller)('email'),
     __metadata("design:paramtypes", [email_service_1.EmailService])

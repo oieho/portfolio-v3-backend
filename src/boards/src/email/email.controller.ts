@@ -23,7 +23,7 @@ export class EmailController {
     @Body('content') content: string,
   ): Promise<any> {
     try {
-      const result = await this.emailService.sendEmail(
+      await this.emailService.sendEmail(
         sender,
         subject,
         emailAddress,
@@ -31,9 +31,25 @@ export class EmailController {
         file,
         files,
       );
-      return { message: 'Email sent successfully!', result };
+      return { message: 'Email sent successfully!' };
     } catch (error) {
       return { message: 'Failed to send email.', error };
+    }
+  }
+
+  @Post('/sendEmailToFindId')
+  async findId(
+    @Body('name') name: string,
+    @Body('email') email: string,
+  ): Promise<any> {
+    try {
+      await this.emailService.sendEmailToFindTheID(name, email);
+
+      return {
+        message: 'By sending the email, find the ID. Email sent successfully!',
+      };
+    } catch (error) {
+      return { message: 'Failed to send the email to find the ID.', error };
     }
   }
 }

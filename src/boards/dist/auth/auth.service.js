@@ -8,20 +8,24 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const bcrypt = require("bcrypt");
-const user_service_1 = require("./../user/user.service");
+const user_service_1 = require("../user/user.service");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const auth_repository_1 = require("./auth.repository");
 let AuthService = class AuthService {
-    constructor(userService, jwtService, configService, authRepository) {
+    constructor(userService, jwtService, configService, authRepository, redisClient) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.configService = configService;
         this.authRepository = authRepository;
+        this.redisClient = redisClient;
     }
     async validateUser(loginDto) {
         const user = await this.userService.findUser(loginDto.userId);
@@ -45,6 +49,17 @@ let AuthService = class AuthService {
             secret: this.configService.get('JWT_ACCESS_SECRET'),
             expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION_TIME'),
         });
+    }
+    async saveAccessToken(userId, token) {
+        await this.redisClient.set(`access_token:${userId}`, token, {
+            EX: 3600,
+        });
+    }
+    async getAccessToken(userId) {
+        return this.redisClient.get(`access_token:${userId}`);
+    }
+    async deleteAccessToken(userId) {
+        await this.redisClient.del(`access_token:${userId}`);
     }
     async generateRefreshToken(user) {
         try {
@@ -138,9 +153,10 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
+    __param(4, (0, common_1.Inject)('REDIS_CLIENT')),
     __metadata("design:paramtypes", [user_service_1.UserService,
         jwt_1.JwtService,
         config_1.ConfigService,
-        auth_repository_1.AuthMongoRepository])
+        auth_repository_1.AuthMongoRepository, Object])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map
