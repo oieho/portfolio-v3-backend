@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -14,6 +15,7 @@ import { RefreshTokenDto } from './dto/auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthMongoRepository } from './auth.repository';
 import { Document } from 'mongoose';
+import { RedisClientType } from 'redis';
 
 export interface Payload {
   userId: string;
@@ -27,6 +29,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private authRepository: AuthMongoRepository,
+    @Inject('REDIS_CLIENT') private readonly redisClient: RedisClientType,
   ) {}
 
   async validateUser(loginDto: LoginDto): Promise<UserDto> {
@@ -59,6 +62,19 @@ export class AuthService {
         expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION_TIME'),
       },
     );
+  }
+
+  async saveAccessToken(userId: string, token: string) {
+    await this.redisClient.set(`access_token:${userId}`, token, {
+      EX: 3600, // 1시간 후 만료
+    });
+  }
+  async getAccessToken(userId: string): Promise<string | null> {
+    return this.redisClient.get(`access_token:${userId}`);
+  }
+
+  async deleteAccessToken(userId: string): Promise<void> {
+    await this.redisClient.del(`access_token:${userId}`);
   }
 
   async generateRefreshToken(user: AuthTokenDto): Promise<string> {

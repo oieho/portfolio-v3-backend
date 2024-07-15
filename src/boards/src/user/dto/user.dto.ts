@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Model, Types } from 'mongoose';
 
-export class LoginUserDto {
+export class UserIdAndPasswordDto {
   @IsString()
   userId: string;
 

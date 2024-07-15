@@ -62,12 +62,11 @@ export class AuthController {
     await this.authService.setCurrentRefreshToken(user.userId, refresh_token);
 
     res.setHeader('authorization', 'Bearer ' + [access_token]);
-    res.cookie('access_token', access_token, {
-      httpOnly: true,
-    });
+    await this.authService.saveAccessToken(user.userId, access_token);
     res.cookie('refresh_token', refresh_token, {
       httpOnly: true,
     });
+
     return {
       message: 'login success',
       access_token: access_token,
@@ -76,15 +75,16 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Req() req: any, @Res() res: Response): Promise<any> {
-    await this.authService.removeRefreshToken(req.user.id);
-    res.clearCookie('access_token');
+  async logout(@Body() req: any, @Res() res: Response): Promise<any> {
+    const userId = req.userId;
+    await this.authService.removeRefreshToken(userId);
+    await this.authService.deleteAccessToken(userId);
+
     res.clearCookie('refresh_token');
     return res.send({
       message: 'logout success',
     });
   }
-
   @Get('authenticate')
   @UseGuards(JwtAuthGuard)
   async user(@Req() req: any, @Res() res: Response): Promise<object> {

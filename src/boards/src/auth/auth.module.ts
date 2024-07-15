@@ -13,9 +13,11 @@ import { UserMongoRepository } from './../user/user.repository';
 import { RefreshTokenSchema } from './../schemas/refresh-token.schema';
 import { UserSchema } from './../schemas/user.schema';
 import { UserModule } from './../user/user.module';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
+    RedisModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

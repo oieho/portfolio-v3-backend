@@ -92,9 +92,10 @@ export class JwtAuthGuard implements CanActivate {
           const newAccessToken =
             await this.authService.generateAccessToken(userInfo);
           response.setHeader('Authorization', 'Bearer ' + newAccessToken);
-          response.cookie('access_token', newAccessToken, {
-            httpOnly: true,
-          });
+          await this.authService.saveAccessToken(
+            userInfo.userId,
+            newAccessToken,
+          );
         }
         return false;
       } else if (

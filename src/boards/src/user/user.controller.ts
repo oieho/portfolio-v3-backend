@@ -49,26 +49,28 @@ export class UserController {
 
   @Get('userInfo')
   async getMyInfo(
+    @Body('userId') userId: string,
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<any> {
     // const accessToken = request.headers['authorization'] as string;
-    const accessToken = request.cookies['access_token'];
-    const refreshToken = request.cookies['refresh_token'];
+    console.log(userId);
+    const accessToken = (await this.authService.getAccessToken(userId)) as any;
+    const refreshToken = await request.cookies['refresh_token'];
 
     console.log('accessToken::', accessToken);
     console.log('refreshToken::', refreshToken);
 
     if (
       (!accessToken && !refreshToken) ||
-      (accessToken === 'undefined' && refreshToken === undefined)
+      (accessToken === null && refreshToken === undefined)
     ) {
       console.log("isn't authorized.");
       throw new UnauthorizedException('No tokens were found.');
     }
 
     let token = accessToken;
-    if (accessToken === 'undefined') {
+    if (accessToken === null) {
       // if (accessToken === 'Bearer undefined') {
       token = refreshToken;
     }
