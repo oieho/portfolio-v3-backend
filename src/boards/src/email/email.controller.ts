@@ -23,7 +23,7 @@ export class EmailController {
     @Body('content') content: string,
   ): Promise<any> {
     try {
-      await this.emailService.sendEmail(
+      await this.emailService.sendAnEmail(
         sender,
         subject,
         emailAddress,

@@ -98,7 +98,7 @@ describe('EmailController', () => {
     ];
 
     jest
-      .spyOn(emailService, 'sendEmail')
+      .spyOn(emailService, 'sendAnEmail')
       .mockResolvedValueOnce(Promise.resolve());
     const result = await controller.sendEmail(
       file,

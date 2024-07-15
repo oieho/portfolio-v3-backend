@@ -10,7 +10,7 @@ export class EmailService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async sendEmail(
+  async sendAnEmail(
     sender: string,
     subject: string,
     emailAddress: string,
@@ -48,8 +48,7 @@ export class EmailService {
     };
 
     try {
-      await this.mailerService.sendMail(mailOptions);
-      return;
+      return await this.mailerService.sendMail(mailOptions);
     } catch (error) {
       throw new Error(`Failed to send email: ${error.message}`);
     }

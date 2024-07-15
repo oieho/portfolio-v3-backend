@@ -2,16 +2,13 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  UnauthorizedException,
-  HttpException,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
-import { AuthTokenDto, LoginDto, RefreshTokenDto } from '../dto/auth.dto';
-import * as jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
 
 interface Payload {
   userId: string;
@@ -34,20 +31,29 @@ export class JwtAuthGuard implements CanActivate {
     const response = context.switchToHttp().getResponse();
     const path = request.route.path;
 
-    const oldAccessToken = this.extractAccessToken(request);
+    const oldAccessToken = await this.authService.getAccessToken(
+      request.body.userId,
+    );
     const oldRefreshToken = request.cookies['refresh_token'];
 
     const accessExp = this.extractExpiration(oldAccessToken);
     const refreshExp = this.extractExpiration(oldRefreshToken);
+    console.log(accessExp, refreshExp);
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
     if (path !== '/auth/authenticate') {
       if (
         accessExp > currentTimeInSeconds &&
+        refreshExp > currentTimeInSeconds
+      ) {
+        return false; // 가드에서 핸들러로 진입 안함
+      } else if (
+        accessExp > currentTimeInSeconds &&
         refreshExp <= currentTimeInSeconds
       ) {
         try {
           const verifiedAccessToken = this.jwtService.verify(oldAccessToken);
+
           const userInfo =
             await this.authService.extractUserInfoFromPayload(
               verifiedAccessToken,
@@ -109,18 +115,6 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user;
       return request.user;
     }
-  }
-
-  private extractAccessToken(request: any): string | null {
-    if (
-      request.headers.authorization &&
-      request.headers.authorization.split(' ')[0] === 'Bearer'
-    ) {
-      return request.headers.authorization.split(' ')[1];
-    } else if (request.cookies && request.cookies['access_token']) {
-      return request.cookies['access_token'];
-    }
-    return null;
   }
 
   private extractExpiration(token: string) {

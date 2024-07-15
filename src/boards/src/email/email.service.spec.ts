@@ -57,24 +57,58 @@ describe('EmailService', () => {
   });
 
   // it('should send an email successfully without attachments', async () => {
-  //   const sendMailSpy = await jest
-  //     .spyOn(mailerService, 'sendMail')
-  //     .mockResolvedValue(undefined);
-
   //   const sender = '사용자22';
   //   const subject = '테스트 제목';
-  //   const senderEmail = 'user22@oieho.com';
-  //   const text = '테스트 본문';
-  //   const file: Express.Multer.File = undefined;
-  //   const files: Express.Multer.File[] = [];
+  //   const emailAddress = 'user22@oieho.com';
+  //   const content = '테스트 본문';
+  //   const file = undefined;
+  //   const files = [];
+  //   let attachments = [];
 
-  //   await service.sendEmail(sender, subject, senderEmail, text, file, files);
+  //   // file이 존재하면 배열에 추가
+  //   if (file) {
+  //     attachments.push({
+  //       filename: file.originalname,
+  //       content: file.buffer,
+  //     });
+  //   }
 
-  //   expect(sendMailSpy).toHaveBeenCalledWith({
+  //   // files가 존재하면 배열에 추가
+  //   if (files && files.length > 0) {
+  //     attachments = [
+  //       ...attachments,
+  //       ...files.map((f) => ({
+  //         filename: f.originalname,
+  //         content: f.buffer,
+  //       })),
+  //     ];
+  //   }
+
+  //   const mailOptions = {
   //     to: 'oiehomail@gmail.com',
-  //     subject: '테스트 제목   -   보낸사람 : 사용자22(user22@oieho.com)',
+  //     subject:
+  //       subject + '   -   보낸사람 : ' + sender + '(' + emailAddress + ')',
   //     text: '테스트 본문',
-  //     attachments: [],
-  //   });
+  //     attachments: attachments.length > 0 ? attachments : [],
+  //   };
+
+  //   // sendMail 함수의 mockImplementation 설정
+  //   jest
+  //     .spyOn(mailerService, 'sendMail')
+  //     .mockImplementation(async (sendMailOptions) => {
+  //       return Promise.resolve({ message: 'Email sent successfully!' });
+  //     });
+
+  //   const result = await service.sendAnEmail(
+  //     sender,
+  //     subject,
+  //     emailAddress,
+  //     content,
+  //     file,
+  //     files,
+  //   );
+
+  //   // sendAnEmail 메서드가 { message: "Email sent successfully!" }를 반환하는지 확인합니다.
+  //   expect(result).toEqual({ message: 'Email sent successfully!' });
   // });
 });

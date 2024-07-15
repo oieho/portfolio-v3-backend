@@ -19,18 +19,15 @@ export class UserService {
   constructor(private readonly userRepository: UserMongoRepository) {}
 
   async register(userDto: UserDto) {
-    // ❸ 메서드 내부에 await 구문이 있으므로 async 필요
-    // ❹ 이미 가입된 유저가 있는지 체크
     const userId = await this.findUser(userDto.userId);
     if (userId) {
-      // ❺ 이미 가입된 유저가 있다면 에러 발생
       throw new HttpException(
-        '해당 유저가 이미 있습니다.',
+        '해당 사용자가 이미 존재합니다.',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    // ❻ 패드워드 암호화
+    // 패드워드 암호화
     const encryptedPassword = bcrypt.hashSync(userDto.password, 10);
     try {
       const user = await this.createUser({
@@ -40,7 +37,7 @@ export class UserService {
         joinDate: new Date(),
         modDate: new Date(),
       });
-      // ❼ 회원 가입 후 반환하는 값에는 password를 주지 않음
+      // 회원 가입 후 반환하는 값에는 password를 주지 않음
       user.password = undefined;
       return user;
     } catch (error) {
