@@ -8,8 +8,8 @@ async function bootstrap() {
   app.use(cookieParser());
   // app.enableCors();
   const config = new DocumentBuilder()
-    .setTitle('NestJS Example')
-    .setDescription('The NestJS API description')
+    .setTitle('oieho 포트폴리오')
+    .setDescription('version 3')
     .setVersion('1.0')
     .addTag('nestjs')
     .build();

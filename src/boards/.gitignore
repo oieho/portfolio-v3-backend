@@ -1,3 +1,5 @@
+/../../../*
+!src/boards/
 # compiled output
 /dist
 /node_modules

@@ -25,21 +25,41 @@ export class LoginDto {
 }
 
 export class AuthTokenDto {
+  @ApiProperty({
+    description: 'User ID',
+    example: 'abcd',
+  })
   @IsString()
   userId: string;
 
+  @ApiProperty({
+    description: '회원 역할',
+    example: 'member or admin',
+  })
   @IsString()
   role: string;
 }
 
 export class RefreshTokenDto {
+  @ApiProperty({
+    description: 'User ID',
+    example: 'abcd',
+  })
   @IsString()
   userId: string;
 
+  @ApiProperty({
+    description: '리프레시 토큰',
+    example: '리프레시 토큰은 Bearer를 접두사로 사용하지 않음',
+  })
   @IsString()
   @IsOptional()
   currentRefreshToken: string;
 
+  @ApiProperty({
+    description: '리프레시 토큰 만료 기간',
+    example: '2주(default)',
+  })
   @IsDate()
   @IsOptional()
   currentRefreshTokenExp: Date;

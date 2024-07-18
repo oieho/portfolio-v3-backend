@@ -25,9 +25,17 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
-import { ApiOperation, ApiTags, ApiBody } from '@nestjs/swagger';
+import {
+  ApiResponse,
+  ApiOperation,
+  ApiTags,
+  ApiBody,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 // import { AuthService, JwtAuthGuard, JwtRefreshGuard, UserService } from '@backend/domain';
 
+@ApiTags('인증 API')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -35,7 +43,6 @@ export class AuthController {
     private readonly userService: UserService,
   ) {}
 
-  @HttpCode(200)
   @Post('login')
   @ApiOperation({
     summary: '로그인',
@@ -50,6 +57,12 @@ export class AuthController {
       },
       required: ['name', 'password'],
     },
+  })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: '요청 성공시',
+    type: Response,
   })
   async login(
     @Body() loginDto: LoginDto,
@@ -74,6 +87,19 @@ export class AuthController {
     };
   }
 
+  @ApiOperation({
+    summary: '로그아웃',
+    description:
+      '로그아웃시 access/refresh Tokens의 쿠키(refresh) 및 redis키값(access) 제거',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        userId: 'user11',
+      },
+    },
+  })
   @Post('logout')
   async logout(@Body() req: any, @Res() res: Response): Promise<any> {
     const userId = req.userId;
@@ -85,6 +111,23 @@ export class AuthController {
       message: 'logout success',
     });
   }
+
+  @ApiOperation({
+    summary: '회원 인증',
+    description: 'access토큰이 유효하면 토큰 클레임에서 userID를 추출해서 반환',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        userId: 'user11',
+      },
+    },
+  })
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({
+    description: 'access/refresh 토큰이 유효하지 않으므로 정보조회 실패',
+  })
   @Get('authenticate')
   @UseGuards(JwtAuthGuard)
   async user(@Req() req: any, @Res() res: Response): Promise<object> {
@@ -119,11 +162,29 @@ export class AuthController {
     return this.authService.remove(+userId);
   }
 
+  @ApiOperation({
+    summary: '새로고침 함수',
+    description:
+      'accessToken이 유효하면 refreshToken(2주) 발급/accessToken이 유효하지 않으며 refreshToken이 DB에 존재하지 않을 경우 accessToken을 미발행/access Token 이 만료되고 refresh Token이 유효하면 access Token 재발행/accessToken이 만료되고 refreshToken도 만료될 경우 헤더에 invalidTokenAccess 리턴/access,refresh가 만료되지 않았으며 refreshToken기간이 3일 이하로 남은 경우, refreshToken 재갱신',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        userId: 'user11',
+        role: 'member',
+      },
+    },
+  })
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({
+    description: 'access/refresh 토큰이 유효하지 않으므로 정보조회 실패',
+  })
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
   async refresh(
     user: AuthTokenDto,
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response,
   ): Promise<{ message: string }> {
     try {
       function isRefreshTokenExpired(expirationDate: Date): boolean {
@@ -139,7 +200,6 @@ export class AuthController {
       const refreshToken = await this.authService.getRefreshTokenByUserId(
         user?.userId,
       );
-
       if (
         refreshToken?.currentRefreshTokenExp &&
         isRefreshTokenExpired(refreshToken?.currentRefreshTokenExp)

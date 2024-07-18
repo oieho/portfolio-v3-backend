@@ -49,36 +49,6 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should register a new user successfully', async () => {
-    const userDto: UserDto = {
-      userId: 'testuser',
-      password: 'password',
-      email: 'testuser@oieho.com',
-      name: 'testuser',
-  it('should modify user successfully', async () => {
-    const userId = 'user11';
-    const userDto: UserDto = {
-      userId: 'user11',
-      password: process.env.USERA11_PASSWORD,
-      email: 'user11@oieho.com',
-      name: '사용자11',
-      socialMedia: 'LOCAL',
-      role: 'member',
-      joinDate: new Date(),
-      modDate: new Date(),
-    };
-
-    jest.spyOn(userMongoRepository, 'findUser').mockResolvedValue(null);
-    jest.spyOn(bcrypt, 'hashSync').mockReturnValue(userDto.password);
-    jest.spyOn(userMongoRepository, 'saveUser').mockResolvedValue(userDto);
-
-    const result = await service.register(userDto);
-
-    expect(result).toBeDefined();
-    expect(result.userId).toBe(userDto.userId);
-    expect(result.password).toBeUndefined(); // password는 반환되지 않음
-  });
-
   describe('register and modify', () => {
     let userDto: UserDto;
     let userId: string;
@@ -188,34 +158,6 @@ describe('UserService', () => {
       const result = await service.findUser(userId);
       expect(result).toEqual(resultUser);
     });
-
-    jest.spyOn(userRepository, 'findUser').mockResolvedValue(userDto);
-
-    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
-    jest
-      .spyOn(bcrypt, 'hashSync')
-      .mockReturnValue(process.env.USERA11_PASSWORD);
-
-    jest.spyOn(userRepository, 'findByUserIdAndUpdate').mockResolvedValue({
-      ...userDto,
-    });
-    const result = await service.modifyUserByUserId(userId, userDto);
-
-    expect(result.userId).toEqual('user11');
-    expect(result.password).toEqual(process.env.USERA11_PASSWORD);
-
-    expect(result).toEqual(
-      expect.objectContaining({
-        email: 'user11@oieho.com',
-        joinDate: expect.any(Date),
-        modDate: expect.any(Date),
-        name: '사용자11',
-        password: process.env.USERA11_PASSWORD,
-        role: 'member',
-        socialMedia: 'LOCAL',
-        userId: 'user11',
-      }),
-    );
   });
 
   it('should return userInfo(entity) if userId matches some entity', async () => {
@@ -243,7 +185,7 @@ describe('UserService', () => {
       __v: 0,
     };
     jest
-      .spyOn(userRepository, 'findUser')
+      .spyOn(userMongoRepository, 'findUser')
       .mockImplementation(async (userId: string) => {
         if (userId === 'user11') {
           return mockUser;
@@ -255,7 +197,6 @@ describe('UserService', () => {
     const result = await service.findUser(userId);
 
     expect(result).toEqual(resultUser);
->>>>>>> 37c22f553d7ff26726dcda206b761a05d3deee99
   });
 
   it('should return true if user exists with given name and email', async () => {
