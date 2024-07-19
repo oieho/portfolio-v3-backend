@@ -26,7 +26,7 @@ export class AuthMongoRepository implements AuthRepository {
   ) {}
 
   async getRefreshToken(userId: string): Promise<RefreshTokenDto> {
-    return await this.refreshTokenModel.findOne({ userId });
+    return await this.refreshTokenModel.findOne({ userId }).lean();
   }
 
   async updateRefreshToken(

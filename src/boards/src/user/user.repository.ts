@@ -20,32 +20,33 @@ export class UserMongoRepository implements UserRepository {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async findUser(userId: string): Promise<UserDto | any> {
-    return await this.userModel.findOne({ userId });
+    return await this.userModel.findOne({ userId }).lean();
   }
 
   async findUserId(name: string): Promise<any> {
-    const user = await this.userModel.findOne({ name }, 'userId');
+    const user = await this.userModel.findOne({ name }, 'userId').lean();
 
     return user.userId;
   }
 
   async findUserName(name: string): Promise<any> {
-    const userName = (await this.userModel.findOne({ name })) as string;
+    const userName = (await this.userModel.findOne({ name }).lean()) as string;
 
     return userName;
   }
 
   async findUserEmail(email: string): Promise<any> {
-    const userEmail = (await this.userModel.findOne({ email })) as string;
+    const userEmail = (await this.userModel
+      .findOne({ email })
+      .lean()) as string;
 
     return userEmail;
   }
 
   async findUserNameAndUserEmail(name: string, email: string): Promise<Object> {
-    const ifMatches = await this.userModel.findOne(
-      { name, email },
-      'name email',
-    );
+    const ifMatches = await this.userModel
+      .findOne({ name, email }, 'name email')
+      .lean();
     return ifMatches;
   }
 
@@ -60,12 +61,10 @@ export class UserMongoRepository implements UserRepository {
   ): Promise<UserDto> {
     userDto.modDate = new Date();
     try {
-      const updatedUser = await this.userModel.findOneAndUpdate(
-        { userId },
-        userDto,
-        { new: true },
-      );
-      return updatedUser.toObject();
+      const updatedUser = await this.userModel
+        .findOneAndUpdate({ userId }, userDto, { new: true })
+        .lean();
+      return updatedUser;
     } catch (error) {
       throw new Error(
         `Failed to update user with userId ${userId}: ${error.message}`,

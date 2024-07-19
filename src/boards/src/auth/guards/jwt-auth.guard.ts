@@ -118,12 +118,20 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractExpiration(token: string) {
-    const parts = token.split('.');
-    const encodedPayload = parts[1];
-    const decodedPayload = Buffer.from(encodedPayload, 'base64').toString(
-      'utf-8',
-    );
-    const payloadObj = JSON.parse(decodedPayload);
+    let payloadObj = null;
+
+    if (token === null) {
+      const now = new Date();
+      const unixTimestamp = Math.floor(now.getTime() / 1000);
+      payloadObj = { exp: unixTimestamp };
+    } else {
+      const parts = token.split('.');
+      const encodedPayload = parts[1];
+      const decodedPayload = Buffer.from(encodedPayload, 'base64').toString(
+        'utf-8',
+      );
+      payloadObj = JSON.parse(decodedPayload);
+    }
     return payloadObj.exp;
   }
 }

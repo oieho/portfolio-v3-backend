@@ -66,7 +66,7 @@ export class AuthService {
 
   async saveAccessToken(userId: string, token: string) {
     await this.redisClient.set(`access_token:${userId}`, token, {
-      EX: 3600, // 1시간 후 만료
+      EX: parseInt(process.env.JWT_ACCESS_EXPIRATION_TIME, 10) / 1000, // 1시간 후 만료
     });
   }
   async getAccessToken(userId: string): Promise<string | null> {
