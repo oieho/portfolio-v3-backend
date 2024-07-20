@@ -1,0 +1,9 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Query {
+  nameChk(name: String!): Boolean!
+  emailChk(email: String!): Boolean!
+  ifMatchNameAndEmail(name: String!, email: String!): Boolean!
+}

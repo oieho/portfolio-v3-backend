@@ -9,16 +9,26 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthMongoRepository } from './auth.repository';
 import { UserMongoRepository } from '../user/user.repository';
 import { getModelToken } from '@nestjs/mongoose';
-import { User, UserDocument } from '../schemas/user.schema';
+import { User } from '../schemas/user.schema';
 import { RefreshToken } from '../schemas/refresh-token.schema';
+import { RedisModule } from '../redis/redis.module';
+import { createClient, RedisClientType } from 'redis';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
+  let authMongoRepository: AuthMongoRepository;
+
+  const redisClientMock = {
+    set: jest.fn().mockResolvedValue('OK'),
+    get: jest.fn().mockResolvedValue('sample_token'),
+    del: jest.fn().mockResolvedValue(1),
+  } as unknown as RedisClientType;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        RedisModule,
         ConfigModule.forRoot({
           isGlobal: true, // 전역으로 사용 가능하게 설정
         }),
@@ -33,10 +43,28 @@ describe('AuthController', () => {
       ],
       controllers: [AuthController],
       providers: [
-        AuthService,
-        UserService,
         ConfigService,
-        AuthMongoRepository,
+        {
+          provide: 'REDIS_CLIENT',
+          useValue: redisClientMock,
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            validateUser: jest.fn(),
+            deleteAccessToken: jest.fn(),
+            saveAccessToken: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        UserService,
+        {
+          provide: AuthMongoRepository,
+          useValue: {
+            // UserMongoRepository의 메서드들에 대한 모의 객체를 설정합니다.
+            updateRefreshToken: jest.fn(),
+            delete: jest.fn(),
+          },
+        },
         UserMongoRepository,
         {
           provide: getModelToken(User.name),
@@ -54,6 +82,36 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+    authMongoRepository = module.get<AuthMongoRepository>(AuthMongoRepository);
+  });
+
+  const userId = 'user11';
+  const token = 'sample_token';
+  const expirationTime =
+    parseInt(process.env.JWT_ACCESS_EXPIRATION_TIME, 10) / 1000;
+
+  it('should save access token to Redis', async () => {
+    await authService.saveAccessToken(userId, token);
+
+    expect(redisClientMock.set).toHaveBeenCalledWith(
+      `access_token:${userId}`,
+      token,
+      { EX: expirationTime },
+    );
+  });
+
+  it('should retrieve access token from Redis', async () => {
+    const result = await authService.getAccessToken(userId);
+
+    expect(redisClientMock.get).toHaveBeenCalledWith(`access_token:${userId}`);
+    expect(result).toBe(token);
+  });
+
+  it('should delete access token from Redis', async () => {
+    await authService.deleteAccessToken(userId);
+
+    expect(authService.deleteAccessToken).toHaveBeenCalledWith(userId);
+    expect(redisClientMock.del).toHaveBeenCalledWith(`access_token:${userId}`);
   });
 
   it('should authenticate user and set cookies', async () => {
@@ -95,17 +153,10 @@ describe('AuthController', () => {
       access_token: expect.any(String),
       refresh_token: expect.any(String),
     });
+
     // AuthService의 validateUser가 호출되었는지 확인
     expect(authService.validateUser).toHaveBeenCalledWith(loginDto);
 
-    // 쿠키 설정 확인
-    expect(mockResponse.cookie).toHaveBeenCalledWith(
-      'access_token',
-      expect.any(String),
-      {
-        httpOnly: true,
-      },
-    );
     expect(mockResponse.cookie).toHaveBeenCalledWith(
       'refresh_token',
       expect.any(String),
@@ -115,10 +166,12 @@ describe('AuthController', () => {
     );
 
     const removeRefreshTokenSpy = jest
-      .spyOn(authService, 'removeRefreshToken')
-      .mockImplementation(async () => {
-        // Mock implementation for removing refresh token
-      });
+      .spyOn(authMongoRepository, 'delete')
+      .mockResolvedValue('testuser');
+    const deleteAccessTokenSpy = jest
+      .spyOn(authMongoRepository, 'delete')
+      .mockResolvedValue('testuser');
+
     await controller.logout({ user: { id: mockUser.userId } }, mockResponse);
 
     expect(mockResponse.send).toHaveBeenCalledWith({

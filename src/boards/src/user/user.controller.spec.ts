@@ -159,52 +159,6 @@ describe('UserController', () => {
     describe('should return userName, userEmail, userName and userEmail if they exists', () => {
       const userName = '사용자1';
       const userEmail = 'user1@oieho.com';
-
-      it('should return true if userName exists', async () => {
-        jest
-          .spyOn(userService, 'findUserName')
-          .mockImplementation(async (name: string) => {
-            const exists = name === '사용자1';
-            return exists;
-          });
-
-        const result = await controller.confirmUserName(userName);
-
-        expect(result).toEqual(true);
-      });
-
-      it('should return true if userEmail exists', async () => {
-        jest
-          .spyOn(userService, 'findUserEmail')
-          .mockImplementation(async (email: string) => {
-            const exists = email === 'user1@oieho.com'; // 예시로 사용자 1이 존재한다고 가정(DB조회가 아니라 가짜로 띄움)
-            return exists;
-          });
-
-        const result = await controller.confirmUserEmail(userEmail);
-
-        expect(result).toEqual(true);
-      });
-
-      it('should return true if name and email match', async () => {
-        jest
-          .spyOn(userService, 'existsByUserNameAndUserEmail')
-          .mockImplementation(async (name: string, email: string) => {
-            // name이 'user1'이고 email이 'user1@oieho.com'일 때만 true를 반환하도록 구현
-            if (name === '사용자1' && email === 'user1@oieho.com') {
-              return true;
-            } else {
-              return false;
-            }
-          });
-
-        const result = await controller.confirmIfMatchNameAndEmail(
-          userName,
-          userEmail,
-        );
-
-        expect(result).toEqual(true);
-      });
     });
   });
 });

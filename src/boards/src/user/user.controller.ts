@@ -166,68 +166,6 @@ export class UserController {
     return response.status(200).json(member);
   }
 
-  @ApiOperation({
-    summary: '회원이름 확인',
-    description: 'DB에 회원 이름이 있는지 확인한 후 true/false 반환',
-  })
-  @ApiBody({
-    required: true,
-    schema: {
-      example: {
-        name: '사용자11',
-      },
-    },
-  })
-  @Post('nameChk')
-  async confirmUserName(@Body('name') name: string): Promise<boolean> {
-    const result = await this.userService.findUserName(name);
-    return result;
-  }
-
-  @ApiOperation({
-    summary: '회원이메일 확인',
-    description: 'DB에 회원 이메일이 있는지 확인한 후 true/false 반환',
-  })
-  @ApiBody({
-    required: true,
-    schema: {
-      example: {
-        email: 'user11@oieho.com',
-      },
-    },
-  })
-  @Post('emailChk')
-  async confirmUserEmail(@Body('email') email: string): Promise<boolean> {
-    const result = await this.userService.findUserEmail(email);
-    return result;
-  }
-
-  @ApiOperation({
-    summary: '회원이름과 이메일이 함께 일치하는 회원이 있는지 확인',
-    description:
-      'DB에 회원 이름과 이메일이 함께 일치하는지 확인 후 true/false 반환',
-  })
-  @ApiBody({
-    required: true,
-    schema: {
-      example: {
-        name: '사용자11',
-        email: 'user11@oieho.com',
-      },
-    },
-  })
-  @Post('ifMatchNameAndEmail')
-  async confirmIfMatchNameAndEmail(
-    @Body('name') name: string,
-    @Body('email') email: string,
-  ): Promise<boolean> {
-    const result = await this.userService.existsByUserNameAndUserEmail(
-      name,
-      email,
-    );
-    return result;
-  }
-
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);

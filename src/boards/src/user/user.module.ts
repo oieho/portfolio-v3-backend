@@ -11,11 +11,12 @@ import { User, UserSchema } from '../schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './../auth/auth.module';
-
 import {
   RefreshToken,
   RefreshTokenSchema,
 } from './../schemas/refresh-token.schema';
+import { UserResolver } from './user.resolver';
+
 @Module({
   imports: [
     JwtModule.registerAsync({
@@ -46,6 +47,7 @@ import {
     UserService,
     AuthMongoRepository,
     UserMongoRepository,
+    UserResolver,
   ],
 })
 export class UserModule {}

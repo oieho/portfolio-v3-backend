@@ -13,10 +13,15 @@ import { UserDto } from './dto/user.dto';
 import { LoginDto } from './../auth/dto/auth.dto';
 import { UserMongoRepository } from './user.repository';
 import { Model, Types } from 'mongoose';
+import { User, UserDocument } from '../schemas/user.schema';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserMongoRepository) {}
+  constructor(
+    private readonly userRepository: UserMongoRepository,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   async register(userDto: UserDto) {
     const userId = await this.findUser(userDto.userId);
@@ -59,9 +64,8 @@ export class UserService {
     return this.userRepository.findByUserIdAndUpdate(userId, userDto);
   }
 
-  async findUser(userId: string): Promise<string | any> {
-    const result = await this.userRepository.findUser(userId);
-    return result;
+  async findUserByCriteria(criteria: Partial<UserDto>): Promise<any | null> {
+    return this.userModel.findOne(criteria).lean() as Promise<any | null>;
   }
 
   async findUserId(name: string): Promise<string> {
@@ -69,34 +73,13 @@ export class UserService {
     return result;
   }
 
-  async findUserName(name: string): Promise<boolean> {
-    const result = await this.userRepository.findUserName(name);
-    return result && result.name === name;
-  }
-
-  async findUserEmail(email: string): Promise<boolean> {
-    const result = await this.userRepository.findUserEmail(email);
-    return result && result.email === email;
-  }
-
-  async existsByUserNameAndUserEmail(
-    name: string,
-    email: string,
-  ): Promise<boolean> {
-    const result = await this.userRepository.findUserNameAndUserEmail(
-      name,
-      email,
-    );
-    if (result != null) {
-      return true;
-    } else if (result === null) {
-      return false;
-    }
+  async findUser(userId: string): Promise<string | any> {
+    const result = await this.userRepository.findUser(userId);
+    return result;
   }
 
   async readUserInfo(userId: string): Promise<UserDto> {
     const result = await this.userRepository.findUser(userId);
-    console.log('RESULT::' + result);
     return result;
   }
   createUser(user): Promise<UserDto> {

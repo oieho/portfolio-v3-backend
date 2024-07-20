@@ -7,11 +7,19 @@ import { UserModule } from './user/user.module';
 import { RefreshTokenSchema } from './schemas/refresh-token.schema';
 import { UserSchema } from './schemas/user.schema';
 import { EmailModule } from './email/email.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      playground: true,
+      autoSchemaFile: join(process.cwd(), 'src/schemas/graphQLschema.gql'),
+    }),
     MongooseModule.forRoot('mongodb://localhost:27017/myDatabase'),
     MongooseModule.forFeature([
       { name: 'RefreshToken', schema: RefreshTokenSchema },

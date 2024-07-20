@@ -10,7 +10,6 @@ import {
 } from '../schemas/refresh-token.schema';
 
 export interface UserRepository {
-  findUser(userId: string): Promise<UserDto>;
   getAllPost(): Promise<UserDto[]>;
   createPost(postDto: UserIdAndPasswordDto);
   deletePost(userId: string);
@@ -27,27 +26,6 @@ export class UserMongoRepository implements UserRepository {
     const user = await this.userModel.findOne({ name }, 'userId').lean();
 
     return user.userId;
-  }
-
-  async findUserName(name: string): Promise<any> {
-    const userName = (await this.userModel.findOne({ name }).lean()) as string;
-
-    return userName;
-  }
-
-  async findUserEmail(email: string): Promise<any> {
-    const userEmail = (await this.userModel
-      .findOne({ email })
-      .lean()) as string;
-
-    return userEmail;
-  }
-
-  async findUserNameAndUserEmail(name: string, email: string): Promise<Object> {
-    const ifMatches = await this.userModel
-      .findOne({ name, email }, 'name email')
-      .lean();
-    return ifMatches;
   }
 
   async saveUser(user: UserDto): Promise<UserDto> {

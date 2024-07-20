@@ -199,25 +199,6 @@ describe('UserService', () => {
     expect(result).toEqual(resultUser);
   });
 
-  it('should return true if user exists with given name and email', async () => {
-    const name = '사용자11';
-    const email = 'user11@oieho.com';
-
-    // userMongoRepository.findUserNameAndUserEmail 메서드를 spyOn하여 모의(Mock) 함수로 대체
-    const findSpy = jest
-      .spyOn(userMongoRepository, 'findUserNameAndUserEmail')
-      .mockResolvedValue(name === '사용자11' && email === 'user11@oieho.com');
-
-    // 서비스 메서드 호출
-    const result = await service.existsByUserNameAndUserEmail(name, email);
-
-    expect(result).toBe(true);
-
-    // 호출된 모의(Mock) 함수 검증
-    expect(findSpy).toHaveBeenCalledWith(name, email);
-    expect(findSpy).toHaveBeenCalledTimes(1);
-  });
-
   it('should return userId if userId exists', async () => {
     const name = '사용자22';
     const mockUser = 'user22';
@@ -234,25 +215,5 @@ describe('UserService', () => {
 
     const result = await service.findUserId(name);
     expect(result).toBe(mockUser);
-  });
-
-  it('should return true if user email exists', async () => {
-    const email = 'user123@oieho.com';
-    const mockUser = { email: 'user123@oieho.com' };
-    jest
-      .spyOn(userMongoRepository, 'findUserEmail')
-      .mockResolvedValue(mockUser);
-
-    const result = await service.findUserEmail(email);
-    expect(result).toBe(true);
-  });
-
-  it('should return true if user name exists', async () => {
-    const name = '사용자22';
-    const mockUser = { name: '사용자22' };
-    jest.spyOn(userMongoRepository, 'findUserName').mockResolvedValue(mockUser);
-
-    const result = await service.findUserName(name);
-    expect(result).toBe(true);
   });
 });

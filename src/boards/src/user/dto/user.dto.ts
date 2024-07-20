@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { Model, Types } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
+import { ObjectType, Field } from '@nestjs/graphql';
 
 export class UserIdAndPasswordDto {
   @IsString()
@@ -21,14 +22,16 @@ export class UserIdAndPasswordDto {
   })
   password: string;
 }
-
+@ObjectType()
 export class UserDto {
+  @Field()
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
   @ApiProperty({ description: '사용자 ID ', default: 'user1', required: true })
   userId: string;
 
+  @Field()
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
@@ -41,6 +44,7 @@ export class UserDto {
   })
   password: string;
 
+  @Field()
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({
@@ -50,6 +54,7 @@ export class UserDto {
   })
   email: string;
 
+  @Field()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -60,6 +65,7 @@ export class UserDto {
   })
   name: string;
 
+  @Field()
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -69,6 +75,7 @@ export class UserDto {
   })
   socialMedia: string;
 
+  @Field()
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -78,6 +85,7 @@ export class UserDto {
   })
   role: string;
 
+  @Field()
   @IsNotEmpty()
   @ApiProperty({
     description: '가입일',
@@ -85,6 +93,7 @@ export class UserDto {
   })
   joinDate: Date;
 
+  @Field()
   @IsNotEmpty()
   @ApiProperty({
     description: '최근 수정일',
