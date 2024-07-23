@@ -8,11 +8,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthMongoRepository } from './auth.repository';
 import { UserMongoRepository } from '../user/user.repository';
-import { getModelToken } from '@nestjs/mongoose';
-import { User } from '../schemas/user.schema';
+import { getModelToken, MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from '../schemas/user.schema';
 import { RefreshToken } from '../schemas/refresh-token.schema';
 import { RedisModule } from '../redis/redis.module';
 import { createClient, RedisClientType } from 'redis';
+import { RecoverPassSchema } from '../schemas/recoverPass.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -29,9 +30,11 @@ describe('AuthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         RedisModule,
-        ConfigModule.forRoot({
-          isGlobal: true, // 전역으로 사용 가능하게 설정
-        }),
+        MongooseModule.forRoot('mongodb://localhost:27017/myDatabase'),
+        MongooseModule.forFeature([
+          { name: 'User', schema: UserSchema },
+          { name: 'RecoverPass', schema: RecoverPassSchema },
+        ]),
         JwtModule.registerAsync({
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => ({
@@ -90,7 +93,7 @@ describe('AuthController', () => {
   const expirationTime =
     parseInt(process.env.JWT_ACCESS_EXPIRATION_TIME, 10) / 1000;
 
-  it('should save access token to Redis', async () => {
+  it('Redis AccessToken - should save access token to Redis', async () => {
     await authService.saveAccessToken(userId, token);
 
     expect(redisClientMock.set).toHaveBeenCalledWith(
@@ -100,21 +103,21 @@ describe('AuthController', () => {
     );
   });
 
-  it('should retrieve access token from Redis', async () => {
+  it('Redis AccessToken - should retrieve access token from Redis', async () => {
     const result = await authService.getAccessToken(userId);
 
     expect(redisClientMock.get).toHaveBeenCalledWith(`access_token:${userId}`);
     expect(result).toBe(token);
   });
 
-  it('should delete access token from Redis', async () => {
+  it('Redis AccessToken - should delete access token from Redis', async () => {
     await authService.deleteAccessToken(userId);
 
     expect(authService.deleteAccessToken).toHaveBeenCalledWith(userId);
     expect(redisClientMock.del).toHaveBeenCalledWith(`access_token:${userId}`);
   });
 
-  it('should authenticate user and set cookies', async () => {
+  it('LOGIN/LOGOUT - should authenticate user and set cookies', async () => {
     const loginDto: LoginDto = {
       userId: 'testuser',
       password: 'testpassword',
@@ -126,7 +129,7 @@ describe('AuthController', () => {
       email: 'test@example.com',
       name: 'Test User',
       socialMedia: 'none',
-      role: 'user',
+      role: 'Member',
       joinDate: new Date(),
       modDate: new Date(),
     };

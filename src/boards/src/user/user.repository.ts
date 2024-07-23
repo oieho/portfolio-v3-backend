@@ -5,6 +5,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
 import {
+  RecoverPass,
+  RecoverPassDocument,
+} from '../schemas/recoverPass.schema';
+import {
   RefreshToken,
   RefreshTokenDocument,
 } from '../schemas/refresh-token.schema';
@@ -16,7 +20,11 @@ export interface UserRepository {
 }
 @Injectable()
 export class UserMongoRepository implements UserRepository {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(RecoverPass.name)
+    private recoverPassModel: Model<RecoverPassDocument>,
+  ) {}
 
   async findUser(userId: string): Promise<UserDto | any> {
     return await this.userModel.findOne({ userId }).lean();
@@ -28,9 +36,20 @@ export class UserMongoRepository implements UserRepository {
     return user.userId;
   }
 
+  async findEmailByUserId(userId: string): Promise<string> {
+    const user = await this.userModel.findOne({ userId }, 'email').lean();
+
+    return user.email;
+  }
+
   async saveUser(user: UserDto): Promise<UserDto> {
     const newUser = new this.userModel(user);
     return await newUser.save();
+  }
+
+  async recoveryPassToken(token: string): Promise<void> {
+    const newToken = new this.recoverPassModel({ resetToken: token });
+    await newToken.save();
   }
 
   async findByUserIdAndUpdate(
@@ -48,6 +67,12 @@ export class UserMongoRepository implements UserRepository {
         `Failed to update user with userId ${userId}: ${error.message}`,
       );
     }
+  }
+
+  async changePassword(userId: string, encryptedPassword: string) {
+    await this.userModel
+      .findOneAndUpdate({ userId: userId }, { password: encryptedPassword })
+      .lean();
   }
 
   async getAllPost(): Promise<UserDto[]> {

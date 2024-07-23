@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthMongoRepository } from './auth.repository';
 import { UserMongoRepository } from './../user/user.repository';
 import { RefreshTokenSchema } from './../schemas/refresh-token.schema';
+import { RecoverPassSchema } from './../schemas/recoverPass.schema';
 import { UserSchema } from './../schemas/user.schema';
 import { UserModule } from './../user/user.module';
 import { RedisModule } from '../redis/redis.module';
@@ -18,9 +19,6 @@ import { RedisModule } from '../redis/redis.module';
 @Module({
   imports: [
     RedisModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     PassportModule.register({}),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -41,6 +39,7 @@ import { RedisModule } from '../redis/redis.module';
     MongooseModule.forFeature([
       { name: 'RefreshToken', schema: RefreshTokenSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'RecoverPass', schema: RecoverPassSchema },
     ]),
   ],
   controllers: [AuthController],

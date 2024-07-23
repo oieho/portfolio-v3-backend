@@ -22,6 +22,28 @@ export class UserIdAndPasswordDto {
   })
   password: string;
 }
+
+@ObjectType()
+export class IdCheckResultsInEmail {
+  @IsString()
+  @Field()
+  extractedEmail: string;
+
+  @Field()
+  existsEmail: boolean;
+}
+
+@ObjectType()
+export class IdAndEmailCheckSendsEmail {
+  @Field()
+  @IsString()
+  @MaxLength(256)
+  token: string;
+
+  @Field()
+  sentEmail: boolean;
+}
+
 @ObjectType()
 export class UserDto {
   @Field()
@@ -45,16 +67,6 @@ export class UserDto {
   password: string;
 
   @Field()
-  @IsEmail()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: '사용자 이메일',
-    default: 'user1@oieho.com',
-    required: true,
-  })
-  email: string;
-
-  @Field()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -64,6 +76,16 @@ export class UserDto {
     required: true,
   })
   name: string;
+
+  @Field()
+  @IsEmail()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '사용자 이메일',
+    default: 'user1@oieho.com',
+    required: true,
+  })
+  email: string;
 
   @Field()
   @IsString()

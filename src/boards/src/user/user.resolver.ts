@@ -1,10 +1,19 @@
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { UserService } from './user.service';
-import { UserDto } from './dto/user.dto';
+import {
+  UserDto,
+  IdCheckResultsInEmail,
+  IdAndEmailCheckSendsEmail,
+} from './dto/user.dto';
+import { NotFoundException } from '@nestjs/common';
+import { EmailService } from '../email/email.service';
 
 @Resolver((of) => UserDto)
 export class UserResolver {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @Query((returns) => Boolean)
   async nameChk(@Args('name') name: string): Promise<boolean> {
@@ -25,5 +34,46 @@ export class UserResolver {
   ): Promise<boolean> {
     const result = await this.userService.findUserByCriteria({ name, email });
     return result ? true : false;
+  }
+
+  @Query(() => IdCheckResultsInEmail)
+  async idChkReturnEmail(
+    @Args('userId') userId: string,
+  ): Promise<IdCheckResultsInEmail> {
+    const extractedEmail = await this.userService.findEmailByUserId(userId);
+    if (extractedEmail) {
+      const existsEmail = extractedEmail !== null;
+
+      return { extractedEmail, existsEmail };
+    } else {
+      throw new NotFoundException('UserID not found!');
+    }
+  }
+
+  @Query(() => IdAndEmailCheckSendsEmail)
+  async idAndEmailChkSendEmailToFindPassword(
+    @Args('userId') userId: string,
+    @Args('email') email: string,
+  ): Promise<IdAndEmailCheckSendsEmail> {
+    const validEmail = await this.userService.findUserByCriteria({
+      userId,
+      email,
+    });
+    let token;
+
+    if (validEmail === null) {
+      throw new NotFoundException(
+        'The provided ID and email are not appropriate',
+      );
+    } else {
+      try {
+        token = await this.userService.saveRecoveryPassToken();
+        await this.emailService.sendEmailToFindThePassword(email, token);
+      } catch (e) {
+        throw new NotFoundException('Internal Server Error');
+      }
+
+      return { token, sentEmail: true };
+    }
   }
 }

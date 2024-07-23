@@ -5,6 +5,7 @@ import {
   Post,
   Put,
   HttpCode,
+  HttpException,
   Body,
   Res,
   Patch,
@@ -12,6 +13,7 @@ import {
   Delete,
   Req,
   UseFilters,
+  NotFoundException,
   UnauthorizedException,
   Catch,
   ExceptionFilter,
@@ -24,7 +26,8 @@ import { AuthService } from '../auth/auth.service';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserDto } from './dto/user.dto';
+import { UserDto, UserIdAndPasswordDto } from './dto/user.dto';
+import * as bcrypt from 'bcrypt';
 import {
   ApiTags,
   ApiParam,
@@ -55,7 +58,7 @@ export class UserController {
         email: 'user11@oieho.com',
         name: '사용자11',
         socialMedia: 'LOCAL',
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       },
@@ -84,7 +87,7 @@ export class UserController {
         email: 'user11@oieho.com',
         name: '사용자11',
         socialMedia: 'LOCAL',
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       },
@@ -166,31 +169,89 @@ export class UserController {
     return response.status(200).json(member);
   }
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @ApiOperation({
+    summary: '발급 된 토큰 유효성 검증',
+    description:
+      '비밀번호 찾기 폼에서 아이디와 이메일 입력 후 통과되어 발급된 토큰(UUID)을 이메일로 검증',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        token: '사용자1df0654f1-c4b2-4aa2-ba62-6becd7f997ba1',
+      },
+    },
+  })
+  @Get('/QualifiedChangePass/:token')
+  async verifyToken(@Param('token') token: string, @Res() res: Response) {
+    try {
+      const result = await this.userService.qualifyByToken(token);
+      return res.status(HttpStatus.OK).send(result);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res.status(HttpStatus.BAD_REQUEST).send('Not found Token.');
+      }
+      throw error;
+    }
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
+  @ApiOperation({
+    summary: '비밀번호 변경 자격 부여',
+    description:
+      '발급한 토큰(UUID)이 DB에 저장 된 토큰과 일치할 경우 비밀번호 변경 허가',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        token: '사용자1df0654f1-c4b2-4aa2-ba62-6becd7f997ba1',
+      },
+    },
+  })
+  @Get('/AuthorizeChangePass/:token')
+  async changePassAuthorization(
+    @Param('token') token: string,
+  ): Promise<boolean> {
+    const validToken = await this.userService.verifyToken(token);
+    if (validToken === true) {
+      return true;
+    }
   }
 
-  @Get(':userId')
-  findOne(@Param('userId') userId: string) {
-    return this.userService.findOne(+userId);
+  @ApiOperation({
+    summary: '발급 된 토큰 제거',
+    description:
+      '인증시간 초과 후 또는 인증에 성공하여 비밀번호 변경 후 토큰 제거',
+  })
+  @Delete('DeleteChangePass/:token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeFindPasswordToken(@Param('token') token: string): Promise<void> {
+    await this.userService.removeRecoverPassToken(token);
   }
 
-  @Patch(':userId')
-  update(
-    @Param('userId') userId: string,
-    @Body() updateUserDto: UpdateUserDto,
+  @ApiOperation({
+    summary: '비밀번호 변경',
+    description: '토큰이 검증된 후 비밀번호 변경',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        userId: 'user11',
+        password: process.env.USER11_PASSWORD,
+      },
+    },
+  })
+  @Put('/changePW')
+  async changePassword(
+    @Body() user: UserIdAndPasswordDto,
+    @Res() res: Response,
   ) {
-    return this.userService.update(+userId, updateUserDto);
-  }
-
-  @Delete(':userId')
-  remove(@Param('userId') userId: string) {
-    return this.userService.remove(+userId);
+    try {
+      await this.userService.changePassword(user.userId, user.password);
+      return res.status(HttpStatus.OK).send(true);
+    } catch (e) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(false);
+    }
   }
 }

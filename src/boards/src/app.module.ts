@@ -6,13 +6,19 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { RefreshTokenSchema } from './schemas/refresh-token.schema';
 import { UserSchema } from './schemas/user.schema';
+import { RecoverPassSchema } from './schemas/recoverPass.schema';
+
 import { EmailModule } from './email/email.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // 전역으로 사용 가능하게 설정
+    }),
     AuthModule,
     UserModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -24,6 +30,7 @@ import { join } from 'path';
     MongooseModule.forFeature([
       { name: 'RefreshToken', schema: RefreshTokenSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'RecoverPass', schema: RecoverPassSchema },
     ]),
     EmailModule,
   ],

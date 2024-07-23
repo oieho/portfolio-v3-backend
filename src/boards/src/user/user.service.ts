@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Res,
   HttpException,
   HttpStatus,
   NotFoundException,
@@ -15,12 +16,19 @@ import { UserMongoRepository } from './user.repository';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  RecoverPass,
+  RecoverPassDocument,
+} from '../schemas/recoverPass.schema';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userRepository: UserMongoRepository,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(RecoverPass.name)
+    private recoverPassModel: Model<RecoverPassDocument>,
   ) {}
 
   async register(userDto: UserDto) {
@@ -38,7 +46,7 @@ export class UserService {
       const user = await this.createUser({
         ...userDto,
         password: encryptedPassword,
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       });
@@ -73,6 +81,11 @@ export class UserService {
     return result;
   }
 
+  async findEmailByUserId(userId: string): Promise<string> {
+    const result = await this.userRepository.findEmailByUserId(userId);
+    return result;
+  }
+
   async findUser(userId: string): Promise<string | any> {
     const result = await this.userRepository.findUser(userId);
     return result;
@@ -82,26 +95,44 @@ export class UserService {
     const result = await this.userRepository.findUser(userId);
     return result;
   }
-  createUser(user): Promise<UserDto> {
-    return this.userRepository.saveUser(user);
-  }
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+
+  async saveRecoveryPassToken(): Promise<string> {
+    const token = uuidv4();
+    await this.userRepository.recoveryPassToken(token);
+    return token;
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async qualifyByToken(token: string): Promise<string> {
+    const resetToken = await this.recoverPassModel
+      .findOne({ resetToken: token })
+      .exec();
+    if (!resetToken) {
+      throw new NotFoundException('Invalid token');
+    }
+    await this.recoverPassModel.deleteOne({ resetToken: token }).exec();
+    return '<html><body><h1>인증이 완료되었습니다.</h1><p>홈페이지로 돌아간 후 비밀번호를 변경하시기 바랍니다.</p></body></html>';
   }
 
-  findOne(userId: number) {
-    return `This action returns a #${userId} user`;
+  async verifyToken(token: string): Promise<boolean> {
+    const resetToken = await this.recoverPassModel
+      .findOne({ resetToken: token })
+      .exec();
+    if (!resetToken) {
+      throw new NotFoundException('Invalid token');
+    }
+    return true;
   }
 
-  update(userId: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${userId} user`;
+  async removeRecoverPassToken(token: string): Promise<void> {
+    await this.recoverPassModel.deleteOne({ resetToken: token }).exec();
   }
 
-  remove(userId: number) {
-    return `This action removes a #${userId} user`;
+  async changePassword(userId: string, password: string): Promise<void> {
+    const encryptedPassword = bcrypt.hashSync(password, 10);
+    await this.userRepository.changePassword(userId, encryptedPassword);
+  }
+
+  async createUser(user): Promise<UserDto> {
+    return await this.userRepository.saveUser(user);
   }
 }

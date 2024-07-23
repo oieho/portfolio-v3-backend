@@ -1,7 +1,7 @@
 import { Req, Res } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth/auth.service';
 import { UserService } from './user.service';
@@ -13,6 +13,7 @@ import { RefreshToken } from '../schemas/refresh-token.schema';
 import { RedisModule } from '../redis/redis.module';
 import { UserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { RecoverPass } from '../schemas/recoverPass.schema';
 
 describe('UserController', () => {
   let authService: AuthService;
@@ -29,9 +30,6 @@ describe('UserController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         RedisModule,
-        ConfigModule.forRoot({
-          isGlobal: true, // 전역으로 사용 가능하게 설정
-        }),
         JwtModule.registerAsync({
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => ({
@@ -45,6 +43,21 @@ describe('UserController', () => {
       providers: [
         AuthService,
         UserService,
+        ConfigService,
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest
+              .fn()
+              .mockReturnValue(
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyMTEiLCJyb2xlIjoiTE9DQUwiLCJpYXQiOjE3MjE4NzY3NDYsImV4cCI6MTcyMTg3NzI0Nn0.HCVDk4c-H3n0GyS5Mc7nGcjM6ZYMQ6FRtX5E4rb2Dfc',
+              ),
+            verify: jest.fn().mockReturnValue({ userId: 'user11' }),
+            extractUserInfoFromPayload: jest
+              .fn()
+              .mockResolvedValue({ userId: 'user11', role: 'Member' }),
+          },
+        },
         AuthMongoRepository,
         {
           provide: UserMongoRepository,
@@ -63,6 +76,10 @@ describe('UserController', () => {
             findOneAndUpdate: jest.fn(),
             deleteOne: jest.fn(),
           },
+        },
+        {
+          provide: getModelToken(RecoverPass.name),
+          useValue: {}, // User 모델의 모의 객체를 설정합니다.
         },
       ],
     }).compile();
@@ -86,7 +103,7 @@ describe('UserController', () => {
         email: 'user11@oieho.com',
         name: '사용자11',
         socialMedia: 'LOCAL',
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       };
@@ -96,12 +113,12 @@ describe('UserController', () => {
         email: 'user11@oieho.com',
         name: '사용자11',
         socialMedia: 'LOCAL',
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       };
 
-      it('should register a new user', async () => {
+      it('register - should register a new user', async () => {
         const result = { ...userDto, userId: userId };
 
         jest.spyOn(userService, 'register').mockResolvedValue(userDto);
@@ -112,7 +129,7 @@ describe('UserController', () => {
         expect(response).toEqual(resultUserDto);
       });
 
-      it('should return the userInfo if user is modified', async () => {
+      it('modify - should return the userInfo if user is modified', async () => {
         jest
           .spyOn(userService, 'modifyUserByUserId')
           .mockResolvedValue(userDto);
@@ -126,11 +143,14 @@ describe('UserController', () => {
         expect(result).toEqual(expect.objectContaining(resultUserDto));
       });
 
-      it('should get userInfo if userId is provided', async () => {
+      it('userInfo - should get userInfo if userId is provided', async () => {
         const accessToken = await authService.generateAccessToken(userDto);
         jest
           .spyOn(authService, 'getAccessToken')
           .mockResolvedValue(accessToken);
+        jest
+          .spyOn(authService, 'extractUserInfoFromPayload')
+          .mockResolvedValue({ userId: userDto.userId, role: userDto.role });
         jest.spyOn(userService, 'readUserInfo').mockResolvedValue(userDto);
 
         const request = {
@@ -155,10 +175,6 @@ describe('UserController', () => {
         expect(response.json).toHaveBeenCalledWith(resultUserDto);
         expect(result).toEqual(resultUserDto);
       });
-    });
-    describe('should return userName, userEmail, userName and userEmail if they exists', () => {
-      const userName = '사용자1';
-      const userEmail = 'user1@oieho.com';
     });
   });
 });

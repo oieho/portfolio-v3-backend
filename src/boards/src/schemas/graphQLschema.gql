@@ -2,8 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type IdCheckResultsInEmail {
+  extractedEmail: String!
+  existsEmail: Boolean!
+}
+
+type IdAndEmailCheckSendsEmail {
+  token: String!
+  sentEmail: Boolean!
+}
+
 type Query {
   nameChk(name: String!): Boolean!
   emailChk(email: String!): Boolean!
   ifMatchNameAndEmail(name: String!, email: String!): Boolean!
+  idChkReturnEmail(userId: String!): IdCheckResultsInEmail!
+  idAndEmailChkSendEmailToFindPassword(userId: String!, email: String!): IdAndEmailCheckSendsEmail!
 }

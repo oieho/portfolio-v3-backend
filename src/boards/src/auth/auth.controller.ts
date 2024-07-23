@@ -172,7 +172,7 @@ export class AuthController {
     schema: {
       example: {
         userId: 'user11',
-        role: 'member',
+        role: 'Member',
       },
     },
   })

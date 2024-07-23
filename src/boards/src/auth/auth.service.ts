@@ -53,7 +53,7 @@ export class AuthService {
   async generateAccessToken(user: any): Promise<string> {
     const payload: Payload = {
       userId: user.userId,
-      role: 'LOCAL',
+      role: 'Member',
     };
     return await this.jwtService.signAsync(
       { userId: payload.userId, role: payload.role },
@@ -81,7 +81,7 @@ export class AuthService {
     try {
       const payload: Payload = {
         userId: user.userId,
-        role: user.role ? user.role : 'LOCAL',
+        role: user.role ? user.role : 'Member',
       };
       return await this.jwtService.signAsync(
         { userId: payload.userId, role: payload.role },

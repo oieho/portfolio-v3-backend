@@ -6,8 +6,10 @@ import { UserService } from './user.service';
 import { UserMongoRepository } from './user.repository';
 import { AuthMongoRepository } from '../auth/auth.repository';
 import { forwardRef } from '@nestjs/common';
+import { MailerModule, MAILER_OPTIONS } from '@nestjs-modules/mailer';
 
 import { User, UserSchema } from '../schemas/user.schema';
+import { RecoverPass, RecoverPassSchema } from '../schemas/recoverPass.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './../auth/auth.module';
@@ -16,9 +18,13 @@ import {
   RefreshTokenSchema,
 } from './../schemas/refresh-token.schema';
 import { UserResolver } from './user.resolver';
+import { EmailService } from '../email/email.service';
+import { RedisModule } from '../redis/redis.module';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
+    RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -38,6 +44,7 @@ import { UserResolver } from './user.resolver';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: RefreshToken.name, schema: RefreshTokenSchema },
+      { name: RecoverPass.name, schema: RecoverPassSchema },
     ]),
   ],
 
@@ -45,6 +52,25 @@ import { UserResolver } from './user.resolver';
   providers: [
     AuthService,
     UserService,
+    ConfigService,
+    EmailService,
+    MailerService,
+    {
+      provide: MAILER_OPTIONS,
+      useValue: {
+        transport: {
+          host: 'smtp.example.com',
+          port: 587,
+          auth: {
+            user: 'user@example.com',
+            pass: 'password',
+          },
+        },
+        defaults: {
+          from: '"No Reply" <no-reply@example.com>',
+        },
+      },
+    },
     AuthMongoRepository,
     UserMongoRepository,
     UserResolver,

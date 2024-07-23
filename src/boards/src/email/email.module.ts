@@ -10,6 +10,7 @@ import { UserService } from '../user/user.service';
 import { UserMongoRepository } from './../user/user.repository';
 import { MulterModule } from '@nestjs/platform-express';
 import { UserSchema } from './../schemas/user.schema';
+import { RecoverPassSchema } from './../schemas/recoverPass.schema';
 
 @Module({
   imports: [
@@ -25,7 +26,10 @@ import { UserSchema } from './../schemas/user.schema';
         },
       },
     }),
-    MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: 'User', schema: UserSchema },
+      { name: 'RecoverPass', schema: RecoverPassSchema },
+    ]),
     MulterModule.register({
       dest: './uploads', // 파일이 저장될 경로
     }),
