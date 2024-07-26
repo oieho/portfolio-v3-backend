@@ -8,10 +8,6 @@ import {
   RecoverPass,
   RecoverPassDocument,
 } from '../schemas/recoverPass.schema';
-import {
-  RefreshToken,
-  RefreshTokenDocument,
-} from '../schemas/refresh-token.schema';
 
 export interface UserRepository {
   getAllPost(): Promise<UserDto[]>;

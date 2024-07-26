@@ -1,7 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  INestApplication,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/auth.dto';
+import { UserDto } from '../user/dto/user.dto';
 import { Response } from 'express';
 import { UserService } from '../user/user.service';
 import { JwtModule } from '@nestjs/jwt';
@@ -12,12 +18,14 @@ import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../schemas/user.schema';
 import { RefreshToken } from '../schemas/refresh-token.schema';
 import { RedisModule } from '../redis/redis.module';
-import { createClient, RedisClientType } from 'redis';
+import { RedisClientType } from 'redis';
 import { RecoverPassSchema } from '../schemas/recoverPass.schema';
 
 describe('AuthController', () => {
+  let app: INestApplication;
   let controller: AuthController;
   let authService: AuthService;
+  let userService: UserService;
   let authMongoRepository: AuthMongoRepository;
 
   const redisClientMock = {
@@ -47,6 +55,7 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         ConfigService,
+        UserMongoRepository,
         {
           provide: 'REDIS_CLIENT',
           useValue: redisClientMock,
@@ -56,10 +65,11 @@ describe('AuthController', () => {
           useValue: {
             validateUser: jest.fn(),
             deleteAccessToken: jest.fn(),
-            saveAccessToken: jest.fn().mockResolvedValue(undefined),
+            saveAccessToken: jest.fn(),
+            generateAccessToken: jest.fn(),
           },
         },
-        UserService,
+        { provide: UserService, useValue: { findUser: jest.fn() } },
         {
           provide: AuthMongoRepository,
           useValue: {
@@ -68,7 +78,6 @@ describe('AuthController', () => {
             delete: jest.fn(),
           },
         },
-        UserMongoRepository,
         {
           provide: getModelToken(User.name),
           useValue: {}, // User 모델의 모의 객체를 설정합니다.
@@ -83,8 +92,12 @@ describe('AuthController', () => {
       ],
     }).compile();
 
+    app = module.createNestApplication();
+    await app.init();
+
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+    userService = module.get<UserService>(UserService);
     authMongoRepository = module.get<AuthMongoRepository>(AuthMongoRepository);
   });
 
@@ -184,6 +197,6 @@ describe('AuthController', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks(); // 각 테스트 후에 모든 Mock 함수를 초기화
+    jest.clearAllMocks();
   });
 });

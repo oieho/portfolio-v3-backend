@@ -1,4 +1,9 @@
 import { Req, Res } from '@nestjs/common';
+import {
+  INestApplication,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -11,11 +16,13 @@ import { getModelToken } from '@nestjs/mongoose';
 import { User } from '../schemas/user.schema';
 import { RefreshToken } from '../schemas/refresh-token.schema';
 import { RedisModule } from '../redis/redis.module';
-import { UserDto } from './dto/user.dto';
+import { UserDto, UserIdAndPasswordDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import * as request from 'supertest';
 import { RecoverPass } from '../schemas/recoverPass.schema';
 
 describe('UserController', () => {
+  let app: INestApplication;
   let authService: AuthService;
   let controller: UserController;
   let userService: UserService;
@@ -41,24 +48,31 @@ describe('UserController', () => {
       ],
       controllers: [UserController],
       providers: [
-        AuthService,
-        UserService,
         ConfigService,
+        AuthService,
+        AuthMongoRepository,
+        {
+          provide: UserService,
+          useValue: {
+            register: jest.fn(),
+            modifyUserByUserId: jest.fn(),
+            readUserInfo: jest.fn(),
+            qualifyByToken: jest.fn(),
+            verifyToken: jest.fn(),
+            removeRecoverPassToken: jest.fn(),
+            changePassword: jest.fn(),
+          },
+        },
         {
           provide: JwtService,
           useValue: {
-            signAsync: jest
-              .fn()
-              .mockReturnValue(
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyMTEiLCJyb2xlIjoiTE9DQUwiLCJpYXQiOjE3MjE4NzY3NDYsImV4cCI6MTcyMTg3NzI0Nn0.HCVDk4c-H3n0GyS5Mc7nGcjM6ZYMQ6FRtX5E4rb2Dfc',
-              ),
+            signAsync: jest.fn().mockReturnValue('Token is valid'),
             verify: jest.fn().mockReturnValue({ userId: 'user11' }),
             extractUserInfoFromPayload: jest
               .fn()
               .mockResolvedValue({ userId: 'user11', role: 'Member' }),
           },
         },
-        AuthMongoRepository,
         {
           provide: UserMongoRepository,
           useValue: {
@@ -83,6 +97,9 @@ describe('UserController', () => {
         },
       ],
     }).compile();
+
+    app = module.createNestApplication();
+    await app.init();
 
     authService = module.get<AuthService>(AuthService);
     controller = module.get<UserController>(UserController);
@@ -174,6 +191,101 @@ describe('UserController', () => {
         expect(response.status).toHaveBeenCalledWith(200);
         expect(response.json).toHaveBeenCalledWith(resultUserDto);
         expect(result).toEqual(resultUserDto);
+      });
+
+      describe('FindPassword', () => {
+        const resetPassToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
+
+        it('/QualifiedChangePass/:token (GET) - success', async () => {
+          const expectedResult =
+            '<html><body><h1>인증이 완료되었습니다.</h1><p>홈페이지로 돌아간 후 비밀번호를 변경하시기 바랍니다.</p></body></html>';
+
+          jest
+            .spyOn(userService, 'qualifyByToken')
+            .mockResolvedValue(expectedResult);
+
+          const response = await request(app.getHttpServer())
+            .get(`/user/QualifiedChangePass/${resetPassToken}`)
+            .expect(HttpStatus.OK);
+
+          expect(response.text).toEqual(expectedResult);
+          expect(userService.qualifyByToken).toHaveBeenCalledWith(
+            resetPassToken,
+          );
+        });
+
+        it('/AuthorizeChangePass/:token (GET) - success', async () => {
+          jest.spyOn(userService, 'verifyToken').mockResolvedValue(true);
+
+          const response = await request(app.getHttpServer())
+            .get(`/user/AuthorizeChangePass/${resetPassToken}`)
+            .expect(HttpStatus.OK);
+
+          expect(response.body).toEqual(true);
+          expect(userService.verifyToken).toHaveBeenCalledWith(resetPassToken);
+        });
+
+        it('/DeleteChangePass/:token (DELETE) - [success]', async () => {
+          jest
+            .spyOn(userService, 'removeRecoverPassToken')
+            .mockResolvedValue(undefined);
+
+          const response = await request(app.getHttpServer())
+            .delete(`/user/DeleteChangePass/${resetPassToken}`)
+            .expect(HttpStatus.NO_CONTENT);
+
+          expect(response.status).toBe(HttpStatus.NO_CONTENT);
+          expect(userService.removeRecoverPassToken).toHaveBeenCalledWith(
+            resetPassToken,
+          );
+        });
+
+        it('[/changePW (PUT) - [success]', async () => {
+          const userDto: UserIdAndPasswordDto = {
+            userId: 'user11',
+            password: '11',
+          };
+
+          // `changePassword` 메서드를 mock 함수로 설정
+          jest
+            .spyOn(userService, 'changePassword')
+            .mockResolvedValue(undefined);
+
+          const response = await request(app.getHttpServer())
+            .put('/user/changePW')
+            .send(userDto)
+            .expect(HttpStatus.OK);
+
+          // 응답 본문 검증
+          expect(response.text).toBe('true');
+          // `changePassword` 호출 검증
+          expect(userService.changePassword).toHaveBeenCalledWith(
+            userDto.userId,
+            userDto.password,
+          );
+        });
+
+        it('/changePW (PUT) - [failure]', async () => {
+          const userDto: UserIdAndPasswordDto = {
+            userId: 'user11',
+            password: '11',
+          };
+
+          jest
+            .spyOn(userService, 'changePassword')
+            .mockRejectedValue(new Error('Error'));
+
+          const response = await request(app.getHttpServer())
+            .put('/user/changePW')
+            .send(userDto)
+            .expect(HttpStatus.INTERNAL_SERVER_ERROR);
+
+          expect(response.text).toBe('false');
+          expect(userService.changePassword).toHaveBeenCalledWith(
+            userDto.userId,
+            userDto.password,
+          );
+        });
       });
     });
   });

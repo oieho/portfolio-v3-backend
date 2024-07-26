@@ -272,8 +272,8 @@ describe('UserService', () => {
   });
 
   describe('findPasswordByToken', () => {
-    const mockToken = 'df0654f1-c4b2-4aa2-ba62-6becd7f997ba';
-    const resultToken = 'df0654f1-c4b2-4aa2-ba62-6becd7f997ba';
+    const mockToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
+    const resultToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
     it('should generate a token and save it using userRepository', async () => {
       (uuidv4 as jest.Mock).mockReturnValue(mockToken);
 

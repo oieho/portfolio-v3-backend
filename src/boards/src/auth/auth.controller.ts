@@ -131,12 +131,16 @@ export class AuthController {
   @Get('authenticate')
   @UseGuards(JwtAuthGuard)
   async user(@Req() req: any, @Res() res: Response): Promise<object> {
-    const verifiedUser: Object = await this.userService.findUser(
-      req.user.userId,
-    );
-    console.log('@@', verifiedUser); // 객체 전체를 출력
-
-    return res.send(verifiedUser);
+    try {
+      const verifiedUser: Object = await this.userService.findUser(
+        req.user.userId,
+      );
+      return res.status(HttpStatus.OK).send(verifiedUser);
+    } catch (e) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send({ message: 'Authentication failed' });
+    }
   }
 
   @Get()

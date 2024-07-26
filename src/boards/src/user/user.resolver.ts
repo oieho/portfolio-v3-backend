@@ -68,9 +68,9 @@ export class UserResolver {
     } else {
       try {
         token = await this.userService.saveRecoveryPassToken();
-        await this.emailService.sendEmailToFindThePassword(email, token);
+        this.emailService.sendEmailToFindThePassword(email, token);
       } catch (e) {
-        throw new NotFoundException('Internal Server Error');
+        throw new NotFoundException(e + ' ' + 'Internal Server Error');
       }
 
       return { token, sentEmail: true };

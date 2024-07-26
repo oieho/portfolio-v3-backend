@@ -44,6 +44,9 @@ describe('UserResolver', () => {
       ],
       providers: [
         UserResolver,
+        EmailModule,
+        EmailService,
+        MailerService,
         { provide: UserService, useValue: mockUserService },
         UserMongoRepository,
         {
@@ -62,9 +65,6 @@ describe('UserResolver', () => {
             },
           },
         },
-        EmailModule,
-        EmailService,
-        MailerService,
       ],
     }).compile();
 
@@ -174,8 +174,8 @@ describe('UserResolver', () => {
 
   it('idAndEmailChkSendEmailToFindPassword - should return token and sentEmail as true when valid email is provided', async () => {
     const userId = '사용자11';
-    const mockToken = '1df0654f1-c4b2-4aa2-ba62-6becd7f997ba';
-    const token = '1df0654f1-c4b2-4aa2-ba62-6becd7f997ba';
+    const mockToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
+    const token = '3080161f-6d21-4056-8c25-0fa1670d35e6';
 
     mockUserService.findUserByCriteria.mockImplementation(
       ({ userId, email }) => {

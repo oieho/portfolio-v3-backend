@@ -178,7 +178,7 @@ export class UserController {
     required: true,
     schema: {
       example: {
-        token: '사용자1df0654f1-c4b2-4aa2-ba62-6becd7f997ba1',
+        token: '4663c4f1-9912-4980-b1d8-1e50e74e1f93',
       },
     },
   })
@@ -204,17 +204,20 @@ export class UserController {
     required: true,
     schema: {
       example: {
-        token: '사용자1df0654f1-c4b2-4aa2-ba62-6becd7f997ba1',
+        token: '4663c4f1-9912-4980-b1d8-1e50e74e1f93',
       },
     },
   })
   @Get('/AuthorizeChangePass/:token')
   async changePassAuthorization(
     @Param('token') token: string,
-  ): Promise<boolean> {
+    @Res() res: Response,
+  ): Promise<any> {
     const validToken = await this.userService.verifyToken(token);
     if (validToken === true) {
-      return true;
+      return res.status(HttpStatus.OK).json(true);
+    } else {
+      return res.status(HttpStatus.BAD_REQUEST).json(false);
     }
   }
 
@@ -226,7 +229,11 @@ export class UserController {
   @Delete('DeleteChangePass/:token')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeFindPasswordToken(@Param('token') token: string): Promise<void> {
-    await this.userService.removeRecoverPassToken(token);
+    try {
+      await this.userService.removeRecoverPassToken(token);
+    } catch (e) {
+      return e;
+    }
   }
 
   @ApiOperation({
