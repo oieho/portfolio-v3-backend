@@ -34,7 +34,7 @@ export class AuthTokenDto {
 
   @ApiProperty({
     description: '회원 역할',
-    example: 'member or admin',
+    example: 'Member or Admin',
   })
   @IsString()
   role: string;

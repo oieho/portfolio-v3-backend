@@ -164,7 +164,6 @@ export class UserController {
     const user =
       await this.authService.extractUserInfoFromPayload(extractedJwtClaims);
     const member = await this.userService.readUserInfo(user.userId);
-    console.log('member::' + member);
 
     return response.status(200).json(member);
   }

@@ -103,8 +103,8 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() req: any, @Res() res: Response): Promise<any> {
     const userId = req.userId;
-    await this.authService.removeRefreshToken(userId);
     await this.authService.deleteAccessToken(userId);
+    await this.authService.removeRefreshToken(userId);
 
     res.clearCookie('refresh_token');
     return res.send({
@@ -141,29 +141,6 @@ export class AuthController {
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send({ message: 'Authentication failed' });
     }
-  }
-
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':userId')
-  findOne(@Param('userId') userId: string) {
-    return this.authService.findOne(+userId);
-  }
-
-  @Patch(':userId')
-  update(
-    @Param('userId') userId: string,
-    @Body() updateAuthDto: UpdateAuthDto,
-  ) {
-    return this.authService.update(+userId, updateAuthDto);
-  }
-
-  @Delete(':userId')
-  remove(@Param('userId') userId: string) {
-    return this.authService.remove(+userId);
   }
 
   @ApiOperation({

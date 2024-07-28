@@ -21,6 +21,11 @@ describe('UserResolver', () => {
     saveRecoveryPassToken: jest.fn(),
   };
 
+  afterEach(async () => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [

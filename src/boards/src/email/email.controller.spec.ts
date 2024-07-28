@@ -6,7 +6,7 @@ import { UserMongoRepository } from '../user/user.repository';
 import { MulterModule } from '@nestjs/platform-express';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Readable } from 'stream';
-import { MongooseModule } from '@nestjs/mongoose';
+import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from '../schemas/user.schema';
 
 describe('EmailController', () => {
@@ -15,10 +15,23 @@ describe('EmailController', () => {
   let emailService: EmailService;
   let userMongoRepository: UserMongoRepository;
 
+  afterEach(async () => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailController],
-      providers: [UserService, EmailService, UserMongoRepository],
+      providers: [
+        UserService,
+        EmailService,
+        UserMongoRepository,
+        {
+          provide: getModelToken('RecoverPass'), // 'RecoverPass'는 Mongoose 모델 이름입니다
+          useValue: { recoveryPassToken: jest.fn() }, // 모의 객체 설정
+        },
+      ],
       imports: [
         MulterModule.register({
           dest: './uploads',

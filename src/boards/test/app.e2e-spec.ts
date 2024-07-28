@@ -46,7 +46,7 @@ describe('User Tests', () => {
         email: `user${i}@oieho.com`,
         name: `사용자${i}`,
         socialMedia: 'LOCAL',
-        role: 'member',
+        role: 'Member',
         joinDate: new Date(),
         modDate: new Date(),
       };

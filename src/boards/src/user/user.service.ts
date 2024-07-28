@@ -1,6 +1,5 @@
 import {
   Injectable,
-  Res,
   HttpException,
   HttpStatus,
   NotFoundException,

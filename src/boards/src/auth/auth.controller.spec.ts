@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/auth.dto';
+import { LoginDto, AuthTokenDto } from './dto/auth.dto';
 import { UserDto } from '../user/dto/user.dto';
 import { Response } from 'express';
 import { UserService } from '../user/user.service';
@@ -22,22 +22,18 @@ import { RedisClientType } from 'redis';
 import { RecoverPassSchema } from '../schemas/recoverPass.schema';
 
 describe('AuthController', () => {
-  let app: INestApplication;
   let controller: AuthController;
   let authService: AuthService;
   let userService: UserService;
-  let authMongoRepository: AuthMongoRepository;
 
-  const redisClientMock = {
-    set: jest.fn().mockResolvedValue('OK'),
-    get: jest.fn().mockResolvedValue('sample_token'),
-    del: jest.fn().mockResolvedValue(1),
-  } as unknown as RedisClientType;
+  afterEach(async () => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        RedisModule,
         MongooseModule.forRoot('mongodb://localhost:27017/myDatabase'),
         MongooseModule.forFeature([
           { name: 'User', schema: UserSchema },
@@ -56,17 +52,25 @@ describe('AuthController', () => {
       providers: [
         ConfigService,
         UserMongoRepository,
+
         {
-          provide: 'REDIS_CLIENT',
-          useValue: redisClientMock,
+          provide: UserService,
+          useValue: {
+            findUser: jest.fn(),
+          },
         },
         {
           provide: AuthService,
           useValue: {
             validateUser: jest.fn(),
-            deleteAccessToken: jest.fn(),
             saveAccessToken: jest.fn(),
             generateAccessToken: jest.fn(),
+            generateRefreshToken: jest.fn(),
+            setCurrentRefreshToken: jest.fn(),
+            removeRefreshToken: jest.fn(),
+            deleteAccessToken: jest.fn(),
+            getAccessToken: jest.fn(),
+            getRefreshTokenByUserId: jest.fn(),
           },
         },
         { provide: UserService, useValue: { findUser: jest.fn() } },
@@ -92,50 +96,12 @@ describe('AuthController', () => {
       ],
     }).compile();
 
-    app = module.createNestApplication();
-    await app.init();
-
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
     userService = module.get<UserService>(UserService);
-    authMongoRepository = module.get<AuthMongoRepository>(AuthMongoRepository);
   });
 
-  const userId = 'user11';
-  const token = 'sample_token';
-  const expirationTime =
-    parseInt(process.env.JWT_ACCESS_EXPIRATION_TIME, 10) / 1000;
-
-  it('Redis AccessToken - should save access token to Redis', async () => {
-    await authService.saveAccessToken(userId, token);
-
-    expect(redisClientMock.set).toHaveBeenCalledWith(
-      `access_token:${userId}`,
-      token,
-      { EX: expirationTime },
-    );
-  });
-
-  it('Redis AccessToken - should retrieve access token from Redis', async () => {
-    const result = await authService.getAccessToken(userId);
-
-    expect(redisClientMock.get).toHaveBeenCalledWith(`access_token:${userId}`);
-    expect(result).toBe(token);
-  });
-
-  it('Redis AccessToken - should delete access token from Redis', async () => {
-    await authService.deleteAccessToken(userId);
-
-    expect(authService.deleteAccessToken).toHaveBeenCalledWith(userId);
-    expect(redisClientMock.del).toHaveBeenCalledWith(`access_token:${userId}`);
-  });
-
-  it('LOGIN/LOGOUT - should authenticate user and set cookies', async () => {
-    const loginDto: LoginDto = {
-      userId: 'testuser',
-      password: 'testpassword',
-    };
-
+  describe('LOGIN/AUTHENTICATE/LOGOUT', () => {
     const mockUser: User = {
       userId: 'testuser',
       password: '$2b$10$N9M4.n6D8OKLsMz4KXo96uRwGjJ3YIgkNsGyGL0A5ihY6gIwFztyu', // bcrypt로 해싱된 패스워드
@@ -147,12 +113,6 @@ describe('AuthController', () => {
       modDate: new Date(),
     };
 
-    // Mock AuthService의 validateUser 메서드
-    jest
-      .spyOn(authService, 'validateUser')
-      .mockResolvedValue(mockUser as never);
-
-    // Mock Response 객체 생성
     const mockResponse = {
       setHeader: jest.fn(),
       cookie: jest.fn(),
@@ -160,43 +120,171 @@ describe('AuthController', () => {
       send: jest.fn(),
     } as unknown as Response;
 
-    // Login 메서드 호출
-    const loginResult = await controller.login(loginDto, mockResponse);
-    // Test logout method
-    // 반환값 확인
-    expect(loginResult).toEqual({
-      message: 'login success',
-      access_token: expect.any(String),
-      refresh_token: expect.any(String),
+    it('LOGIN - should authenticate user and set cookies', async () => {
+      const loginDto: LoginDto = {
+        userId: 'testuser',
+        password: 'testpassword',
+      };
+
+      jest
+        .spyOn(authService, 'validateUser')
+        .mockResolvedValue(mockUser as never);
+      jest
+        .spyOn(authService, 'generateAccessToken')
+        .mockResolvedValue('mock token');
+      jest
+        .spyOn(authService, 'generateRefreshToken')
+        .mockResolvedValue('mock token');
+      jest
+        .spyOn(authService, 'setCurrentRefreshToken')
+        .mockResolvedValue(undefined); // 추가
+      jest.spyOn(authService, 'saveAccessToken').mockResolvedValue(undefined); // 추가
+
+      const loginResult = await controller.login(loginDto, mockResponse);
+
+      expect(loginResult).toEqual({
+        message: 'login success',
+        access_token: expect.any(String),
+        refresh_token: expect.any(String),
+      });
+      expect(authService.validateUser).toHaveBeenCalledWith(loginDto);
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'authorization',
+        'Bearer mock token',
+      );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'refresh_token',
+        expect.any(String),
+        {
+          httpOnly: true,
+        },
+      );
+      expect(authService.setCurrentRefreshToken).toHaveBeenCalledWith(
+        'testuser',
+        'mock token',
+      );
+      expect(authService.saveAccessToken).toHaveBeenCalledWith(
+        'testuser',
+        'mock token',
+      );
     });
 
-    // AuthService의 validateUser가 호출되었는지 확인
-    expect(authService.validateUser).toHaveBeenCalledWith(loginDto);
+    it('AUTHENTICATE - should return the verified user object if authentication is successful - [success]', async () => {
+      const req: any = {
+        user: { userId: 'user11' },
+      };
+      const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+      };
+      const verifiedUser = { id: 'user11' };
 
-    expect(mockResponse.cookie).toHaveBeenCalledWith(
-      'refresh_token',
-      expect.any(String),
-      {
-        httpOnly: true,
-      },
-    );
+      jest.spyOn(userService, 'findUser').mockResolvedValue(verifiedUser);
 
-    const removeRefreshTokenSpy = jest
-      .spyOn(authMongoRepository, 'delete')
-      .mockResolvedValue('testuser');
-    const deleteAccessTokenSpy = jest
-      .spyOn(authMongoRepository, 'delete')
-      .mockResolvedValue('testuser');
+      await controller.user(req, res as Response);
 
-    await controller.logout({ user: { id: mockUser.userId } }, mockResponse);
-
-    expect(mockResponse.send).toHaveBeenCalledWith({
-      message: 'logout success',
+      expect(userService.findUser).toHaveBeenCalledWith('user11');
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(res.send).toHaveBeenCalledWith(verifiedUser);
     });
-    expect(removeRefreshTokenSpy).toHaveBeenCalledWith(mockUser.userId);
+
+    it('AUTHENTICATE - should return an error message if authentication fails - [failure]', async () => {
+      const req: any = {
+        user: { userId: 'user11' },
+      };
+      const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn(),
+      };
+
+      jest
+        .spyOn(userService, 'findUser')
+        .mockRejectedValue(new Error('Database error'));
+
+      await controller.user(req, res as Response);
+
+      expect(userService.findUser).toHaveBeenCalledWith('user11');
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(res.send).toHaveBeenCalledWith({
+        message: 'Authentication failed',
+      });
+    });
+
+    it('LOGOUT - should logout user and remove token and cookie', async () => {
+      const deleteAccessTokenSpy = await jest
+        .spyOn(authService, 'deleteAccessToken')
+        .mockResolvedValue(1);
+      const removeRefreshTokenSpy = await jest
+        .spyOn(authService, 'removeRefreshToken')
+        .mockResolvedValue('testuser');
+
+      // Logout 메서드 호출
+      await controller.logout({ userId: mockUser.userId }, mockResponse);
+
+      // 응답 확인
+      expect(mockResponse.send).toHaveBeenCalledWith({
+        message: 'logout success',
+      });
+
+      expect(deleteAccessTokenSpy).toHaveBeenCalledWith(mockUser.userId);
+      expect(removeRefreshTokenSpy).toHaveBeenCalledWith(mockUser.userId);
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refresh_token');
+    });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  describe('refresh page', () => {
+    const user: AuthTokenDto = { userId: 'user11', role: 'Member' };
+    const res: Partial<Response> = {
+      cookie: jest.fn(),
+    };
+    it('Should check whether the token refreshes successfully if the refresh token will be expired in 3 days  - [success]', async () => {
+      const refreshToken = {
+        currentRefreshTokenExp: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 밀리세컨드 값이 현재 설정 된 값보다 1이 높을 경우 3일 이상이므로 테스트 실패
+      };
+
+      jest
+        .spyOn(authService, 'getRefreshTokenByUserId')
+        .mockResolvedValue(refreshToken);
+      jest
+        .spyOn(authService, 'generateRefreshToken')
+        .mockResolvedValue('newRefreshToken');
+      jest
+        .spyOn(authService, 'setCurrentRefreshToken')
+        .mockResolvedValue(undefined);
+
+      const result = await controller.refresh(user, res as Response);
+
+      expect(authService.getRefreshTokenByUserId).toHaveBeenCalledWith(
+        'user11',
+      );
+      expect(authService.generateRefreshToken).toHaveBeenCalledWith(user);
+      expect(authService.setCurrentRefreshToken).toHaveBeenCalledWith(
+        'user11',
+        'newRefreshToken',
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'refresh_token',
+        'newRefreshToken',
+        {
+          httpOnly: true,
+        },
+      );
+      expect(result).toEqual({ message: 'Token refreshed successfully' });
+    });
+
+    it('RefreshToken - should return an error message if an exception is thrown - [failure]', async () => {
+      jest
+        .spyOn(authService, 'getRefreshTokenByUserId')
+        .mockRejectedValue(new Error('Database error'));
+
+      const result = await controller.refresh(user, res as Response);
+
+      expect(authService.getRefreshTokenByUserId).toHaveBeenCalledWith(
+        'user11',
+      );
+      expect(result).toEqual({
+        message: 'Token operation failedError: Database error',
+      });
+    });
   });
 });

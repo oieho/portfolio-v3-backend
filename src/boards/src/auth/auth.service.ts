@@ -40,13 +40,12 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found!');
     }
-
     if (!(await bcrypt.compare(loginDto.password, user.password))) {
       console.log(loginDto.password);
       console.log(user.password);
       throw new BadRequestException('Invalid credentials!');
     }
-    console.log(user);
+
     return user;
   }
 
@@ -69,11 +68,12 @@ export class AuthService {
       EX: parseInt(process.env.JWT_ACCESS_EXPIRATION_TIME, 10) / 1000, // 1시간 후 만료
     });
   }
+
   async getAccessToken(userId: string): Promise<string | null> {
     return this.redisClient.get(`access_token:${userId}`);
   }
 
-  async deleteAccessToken(userId: string): Promise<void> {
+  async deleteAccessToken(userId: string): Promise<any> {
     await this.redisClient.del(`access_token:${userId}`);
   }
 
@@ -97,7 +97,10 @@ export class AuthService {
     }
   }
 
-  async setCurrentRefreshToken(userId: string, refreshToken: string) {
+  async setCurrentRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
     const currentRefreshToken =
       await this.getCurrentHashedRefreshToken(refreshToken);
     const currentRefreshTokenExp = await this.getCurrentRefreshTokenExp();
@@ -150,13 +153,18 @@ export class AuthService {
     currentRefreshTokenByCookie: Object,
     oldRefreshTokenInDB: string,
   ): Promise<boolean | null> {
-    const isRefreshTokenMatching = await bcrypt.compare(
-      currentRefreshTokenByCookie,
-      oldRefreshTokenInDB,
-    );
-
-    if (isRefreshTokenMatching) {
-      return true;
+    try {
+      const isRefreshTokenMatching = await bcrypt.compare(
+        currentRefreshTokenByCookie,
+        oldRefreshTokenInDB,
+      );
+      if (isRefreshTokenMatching) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
     }
   }
 
@@ -177,21 +185,5 @@ export class AuthService {
 
   async removeRefreshToken(userId: string): Promise<any> {
     return await this.authRepository.delete(userId);
-  }
-
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(userId: number) {
-    return `This action returns a #${userId} auth`;
-  }
-
-  update(userId: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${userId} auth`;
-  }
-
-  remove(userId: number) {
-    return `This action removes a #${userId} auth`;
   }
 }
