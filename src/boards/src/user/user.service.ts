@@ -20,6 +20,7 @@ import {
   RecoverPass,
   RecoverPassDocument,
 } from '../schemas/recoverPass.schema';
+import { encode } from 'punycode';
 
 @Injectable()
 export class UserService {
@@ -133,5 +134,24 @@ export class UserService {
 
   async createUser(user): Promise<UserDto> {
     return await this.userRepository.saveUser(user);
+  }
+
+  async checkPassword(userId: string, password: string): Promise<boolean> {
+    const encodedPw = await this.userRepository.findByEncodedPw(userId);
+    if (!encodedPw) {
+      throw new BadRequestException(
+        'Encoded password not found for the given userId',
+      );
+    }
+
+    const isMatch = await bcrypt.compare(password, encodedPw);
+    if (!isMatch) {
+      return false;
+    }
+    const result = await this.userRepository.existsByUserIdAndUserPw(
+      userId,
+      encodedPw,
+    );
+    return result;
   }
 }

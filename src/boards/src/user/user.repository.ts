@@ -10,9 +10,15 @@ import {
 } from '../schemas/recoverPass.schema';
 
 export interface UserRepository {
-  getAllPost(): Promise<UserDto[]>;
-  createPost(postDto: UserIdAndPasswordDto);
-  deletePost(userId: string);
+  findUser(userId: string): Promise<UserDto | any>;
+  findUserId(name: string): Promise<any>;
+  findEmailByUserId(userId: string): Promise<string>;
+  saveUser(user: UserDto): Promise<UserDto>;
+  recoveryPassToken(token: string): Promise<void>;
+  findByUserIdAndUpdate(userId: string, userDto: UserDto): Promise<UserDto>;
+  changePassword(userId: string, encryptedPassword: string);
+  findByEncodedPw(userId: string): Promise<string | null>;
+  existsByUserIdAndUserPw(userId: string, encodedPw: string): Promise<boolean>;
 }
 @Injectable()
 export class UserMongoRepository implements UserRepository {
@@ -27,13 +33,16 @@ export class UserMongoRepository implements UserRepository {
   }
 
   async findUserId(name: string): Promise<any> {
-    const user = await this.userModel.findOne({ name }, 'userId').lean();
+    const user = await this.userModel.findOne({ name }).select('userId').lean();
 
     return user.userId;
   }
 
   async findEmailByUserId(userId: string): Promise<string> {
-    const user = await this.userModel.findOne({ userId }, 'email').lean();
+    const user = await this.userModel
+      .findOne({ userId })
+      .select('email')
+      .lean();
 
     return user.email;
   }
@@ -71,34 +80,21 @@ export class UserMongoRepository implements UserRepository {
       .lean();
   }
 
-  async getAllPost(): Promise<UserDto[]> {
-    const users = await this.userModel.find().exec();
-    return users.map((user) => this.toUserDto(user));
+  async findByEncodedPw(userId: string): Promise<string | null> {
+    const user = await this.userModel
+      .findOne({ userId })
+      .select('password')
+      .lean();
+    return user ? user.password : null;
   }
 
-  async createPost(postDto: UserIdAndPasswordDto) {
-    const createPost = {
-      ...postDto,
-      createdDt: new Date(),
-      updatedDt: new Date(),
-    };
-    await this.userModel.create(createPost);
-  }
+  async existsByUserIdAndUserPw(
+    userId: string,
+    password: string,
+  ): Promise<boolean> {
+    const user = await this.userModel.findOne({ userId, password }).lean();
 
-  async deletePost(userId: string) {
-    await this.userModel.findByIdAndDelete(userId);
-  }
-
-  private toUserDto(user: UserDocument): UserDto {
-    return {
-      userId: user.userId,
-      password: user.password,
-      email: user.email,
-      name: user.name,
-      socialMedia: user.socialMedia,
-      role: user.role,
-      joinDate: user.joinDate,
-      modDate: user.modDate,
-    };
+    console.log('User:', user);
+    return !!user;
   }
 }

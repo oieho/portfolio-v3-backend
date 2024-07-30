@@ -5,7 +5,8 @@ import {
   IdCheckResultsInEmail,
   IdAndEmailCheckSendsEmail,
 } from './dto/user.dto';
-import { NotFoundException } from '@nestjs/common';
+
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { EmailService } from '../email/email.service';
 
 @Resolver((of) => UserDto)

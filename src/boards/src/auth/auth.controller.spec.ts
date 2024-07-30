@@ -120,7 +120,7 @@ describe('AuthController', () => {
       send: jest.fn(),
     } as unknown as Response;
 
-    it('LOGIN - should authenticate user and set cookies', async () => {
+    it('LOGIN - should authenticate user and set cookies - [success]', async () => {
       const loginDto: LoginDto = {
         userId: 'testuser',
         password: 'testpassword',
@@ -210,7 +210,7 @@ describe('AuthController', () => {
       });
     });
 
-    it('LOGOUT - should logout user and remove token and cookie', async () => {
+    it('LOGOUT - should logout user and remove token and cookie - [success]', async () => {
       const deleteAccessTokenSpy = await jest
         .spyOn(authService, 'deleteAccessToken')
         .mockResolvedValue(1);

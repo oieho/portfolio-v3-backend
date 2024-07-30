@@ -109,7 +109,7 @@ describe('AuthService', () => {
       password: '1',
     };
 
-    it('should throw NotFoundException if user is not found', async () => {
+    it('should throw NotFoundException if user is not found - [failure]', async () => {
       jest.spyOn(userService, 'findUser').mockResolvedValue(null);
 
       await expect(authService.validateUser(loginDto)).rejects.toThrow(
@@ -118,7 +118,7 @@ describe('AuthService', () => {
       expect(userService.findUser).toHaveBeenCalledWith('user11');
     });
 
-    it('should throw BadRequestException if password is invalid', async () => {
+    it('should throw BadRequestException if password is invalid - [failure]', async () => {
       const user = {
         userId: 'user11',
         password: await bcrypt.hash('wrongPassword', 10),
@@ -132,7 +132,7 @@ describe('AuthService', () => {
       expect(userService.findUser).toHaveBeenCalledWith('user11');
     });
 
-    it('should return the user if credentials are valid', async () => {
+    it('should return the user if credentials are valid - [success]', async () => {
       const user = {
         userId: 'user11',
         password: await bcrypt.hash(loginDto.password, 10),
@@ -151,7 +151,7 @@ describe('AuthService', () => {
     const expirationTime =
       Number(process.env.JWT_ACCESS_EXPIRATION_TIME) / 1000;
 
-    it('Redis AccessToken - should save access token to Redis', async () => {
+    it('Redis AccessToken - should save access token to Redis - [success]', async () => {
       const token = 'sample_token';
       redisClientMock.set(`access_token:${userId}`, token, {
         EX: expirationTime,
@@ -163,7 +163,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('Redis AccessToken - should retrieve access token from Redis', async () => {
+    it('Redis AccessToken - should retrieve access token from Redis - [success]', async () => {
       redisClientMock.get(`access_token:${userId}`);
       jest
         .spyOn(authService, 'getAccessToken')
@@ -176,7 +176,7 @@ describe('AuthService', () => {
       expect(result).toBe(`access_token:${userId}`);
     });
 
-    it('Redis AccessToken - should delete access token from Redis', async () => {
+    it('Redis AccessToken - should delete access token from Redis - [success]', async () => {
       redisClientMock.del(`access_token:${userId}`);
       jest
         .spyOn(authService, 'deleteAccessToken')
@@ -192,7 +192,7 @@ describe('AuthService', () => {
   describe('RefreshToken - UPDATE/GET/MATCH/REMOVE', () => {
     const refreshToken = 'refreshToken';
 
-    it('RefreshToken - should update refresh token and its expiration', async () => {
+    it('RefreshToken - should update refresh token and its expiration - [success]', async () => {
       const hashedRefreshToken = 'hashedRefreshToken';
       const refreshTokenExp = new Date();
 
@@ -222,7 +222,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('RefreshToken - should return refresh token dto if refresh token exists', async () => {
+    it('RefreshToken - should return refresh token dto if refresh token exists - [success]', async () => {
       const refreshTokenInfo = {
         userId: 'user11',
         currentRefreshToken: 'refreshToken',
@@ -242,7 +242,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('RefreshToken - should return null if refresh token does not exist', async () => {
+    it('RefreshToken - should return null if refresh token does not exist - [failure]', async () => {
       jest
         .spyOn(authMongoRepository, 'getRefreshToken')
         .mockResolvedValue(null);
@@ -252,7 +252,7 @@ describe('AuthService', () => {
       expect(result).toBeNull();
     });
 
-    it('RefreshToken - should return null if there is an error', async () => {
+    it('RefreshToken - should return null if there is an error - [failure]', async () => {
       jest
         .spyOn(authMongoRepository, 'getRefreshToken')
         .mockRejectedValue(new Error('error'));
@@ -262,7 +262,7 @@ describe('AuthService', () => {
       expect(result).toBeNull();
     });
 
-    it('HashedRefreshToken - should return hashed refresh token', async () => {
+    it('HashedRefreshToken - should return hashed refresh token - [success]', async () => {
       const hashedToken = 'hashed-token';
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue(hashedToken);
@@ -274,7 +274,7 @@ describe('AuthService', () => {
       expect(bcrypt.hash).toHaveBeenCalledWith(refreshToken, 10);
     });
 
-    it('RefreshToken - should return correct expiration date', async () => {
+    it('RefreshToken - should return correct expiration date - [success]', async () => {
       const expirationTime = '3600000'; // 1 hour in milliseconds
       (configService.get as jest.Mock).mockReturnValue(expirationTime);
 
@@ -292,7 +292,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('RefreshToken Matches - should return true if refresh tokens match', async () => {
+    it('RefreshToken Matches - should return true if refresh tokens match - [success]', async () => {
       const currentRefreshTokenByCookie = 'plain-token';
       const oldRefreshTokenInDB = 'hashed-token';
 
@@ -311,7 +311,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('RefreshToken Matches - should return null if refresh tokens do not match', async () => {
+    it('RefreshToken Matches - should return null if refresh tokens do not match - [failure]', async () => {
       const currentRefreshTokenByCookie = 'plain-token';
       const oldRefreshTokenInDB = 'hashed-token';
 
@@ -330,7 +330,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('RefreshToken Matches - should handle errors correctly and return false', async () => {
+    it('RefreshToken Matches - should handle errors correctly and return false - [failure]', async () => {
       const currentRefreshTokenByCookie = 'plain-token';
       const oldRefreshTokenInDB = 'hashed-token';
 
@@ -348,7 +348,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('Remove RefreshToken - should call authRepository.delete with the correct userId', async () => {
+    it('Remove RefreshToken - should call authRepository.delete with the correct userId - [success]', async () => {
       jest.spyOn(authMongoRepository, 'delete').mockResolvedValue({
         success: true,
       });
@@ -359,7 +359,7 @@ describe('AuthService', () => {
       expect(result).toEqual({ success: true });
     });
 
-    it('Remove RefreshToken - should handle errors from authRepository.delete', async () => {
+    it('Remove RefreshToken - should handle errors from authRepository.delete - [failure]', async () => {
       jest
         .spyOn(authMongoRepository, 'delete')
         .mockRejectedValue(new Error('Failed to delete'));
@@ -372,7 +372,7 @@ describe('AuthService', () => {
     });
   });
   describe('extractUserInfoFromPayload', () => {
-    it('extractUserInfoFromPayload - should return userId and role if payload is valid', async () => {
+    it('extractUserInfoFromPayload - should return userId and role if payload is valid - [success]', async () => {
       const payload = {
         userId: 'user11',
         role: 'Member',
@@ -386,7 +386,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('extractUserInfoFromPayload - should return null if payload is missing userId', async () => {
+    it('extractUserInfoFromPayload - should return null if payload is missing userId - [failure]', async () => {
       const payload = {
         role: 'Member',
       };
@@ -396,7 +396,7 @@ describe('AuthService', () => {
       expect(result).toBeNull();
     });
 
-    it('extractUserInfoFromPayload - should return null if payload is missing role', async () => {
+    it('extractUserInfoFromPayload - should return null if payload is missing role - [failure]', async () => {
       const payload = {
         userId: 'user11',
       };
@@ -406,7 +406,7 @@ describe('AuthService', () => {
       expect(result).toBeNull();
     });
 
-    it('extractUserInfoFromPayload - should return null if payload is null or undefined', async () => {
+    it('extractUserInfoFromPayload - should return null if payload is null or undefined - [failure]', async () => {
       const resultNull = await authService.extractUserInfoFromPayload(null);
       const resultUndefined =
         await authService.extractUserInfoFromPayload(undefined);
@@ -415,7 +415,7 @@ describe('AuthService', () => {
       expect(resultUndefined).toBeNull();
     });
 
-    it('extractUserInfoFromPayload - should return null and log error if an exception occurs', async () => {
+    it('extractUserInfoFromPayload - should return null and log error if an exception occurs - [failure]', async () => {
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
         .mockImplementation(() => {});

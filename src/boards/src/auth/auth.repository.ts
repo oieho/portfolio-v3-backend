@@ -9,13 +9,15 @@ import {
 } from '../schemas/refresh-token.schema';
 
 export interface AuthRepository {
+  getRefreshToken(userId: string): Promise<RefreshTokenDto>;
   updateRefreshToken(
     userId: string,
     currentRefreshTokenSet: {
       currentRefreshToken: string;
       currentRefreshTokenExp: Date;
     },
-  );
+  ): Promise<void>;
+  delete(userId: string): Promise<any>;
 }
 @Injectable()
 export class AuthMongoRepository implements AuthRepository {
@@ -35,7 +37,7 @@ export class AuthMongoRepository implements AuthRepository {
       currentRefreshToken: string;
       currentRefreshTokenExp: Date;
     },
-  ) {
+  ): Promise<void> {
     await this.refreshTokenModel.findOneAndUpdate(
       { userId },
       {

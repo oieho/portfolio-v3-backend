@@ -6,6 +6,7 @@ import { EmailService } from '../email/email.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { MailerModule, MAILER_OPTIONS } from '@nestjs-modules/mailer';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BadRequestException } from '@nestjs/common';
 import { UserSchema } from '../schemas/user.schema';
 import { RecoverPassSchema } from '../schemas/recoverPass.schema';
 import { UserMongoRepository } from './user.repository';
@@ -49,6 +50,7 @@ describe('UserResolver', () => {
       ],
       providers: [
         UserResolver,
+        UserService,
         EmailModule,
         EmailService,
         MailerService,
@@ -108,7 +110,7 @@ describe('UserResolver', () => {
       jest.clearAllMocks();
     });
 
-    it('nameChk - should return the user name if user exists', async () => {
+    it('nameChk - should return the user name if user exists - [success]', async () => {
       // mockUserService.findUserByCriteria에서 name으로 필터링하여 mockUser를 반환하도록 설정합니다.
       mockUserService.findUserByCriteria.mockImplementation(({ name }) => {
         return name === username ? mockUser : null;
@@ -122,7 +124,7 @@ describe('UserResolver', () => {
       expect(findUserByCriteriaSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('emailChk - should return the user email if user exists', async () => {
+    it('emailChk - should return the user email if user exists - [success]', async () => {
       // mockUserService.findUserByCriteria에서 email로 필터링하여 mockUser를 반환하도록 설정합니다.
       mockUserService.findUserByCriteria.mockImplementation(({ email }) => {
         return email === email ? mockUser : null;
@@ -138,7 +140,7 @@ describe('UserResolver', () => {
       expect(findUserByCriteriaSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('ifMatchNameAndEmail - should return a user if both name and email match', async () => {
+    it('ifMatchNameAndEmail - should return a user if both name and email match - [success]', async () => {
       // mockUserService.findUserByCriteria에서 name과 email로 필터링하여 mockUser를 반환하도록 설정합니다.
       mockUserService.findUserByCriteria.mockImplementation(
         ({ name, email }) => {
@@ -158,7 +160,7 @@ describe('UserResolver', () => {
     });
   });
 
-  it('idChkReturnEmail - should return email and existsEmail as true when email is found', async () => {
+  it('idChkReturnEmail - should return email and existsEmail as true when email is found - [success]', async () => {
     const userId = 'user11';
 
     // Mock implementation to return email based on userId
@@ -177,7 +179,7 @@ describe('UserResolver', () => {
     expect(userService.findEmailByUserId).toHaveBeenCalledWith(userId);
   });
 
-  it('idAndEmailChkSendEmailToFindPassword - should return token and sentEmail as true when valid email is provided', async () => {
+  it('idAndEmailChkSendEmailToFindPassword - should return token and sentEmail as true when valid email is provided - [success]', async () => {
     const userId = '사용자11';
     const mockToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
     const token = '3080161f-6d21-4056-8c25-0fa1670d35e6';
@@ -209,5 +211,29 @@ describe('UserResolver', () => {
       email,
       token,
     );
+  });
+
+  describe('checkPassword', () => {
+    it('should throw BadRequestException if userId or password is missing - [failure]', async () => {
+      await expect(resolver.checkPassword('', 'password')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(resolver.checkPassword('userId', '')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should return the result from userService.checkPassword - [success]', async () => {
+      const userId = 'testUserId';
+      const password = 'testPassword';
+      const checkPasswordResult = true;
+
+      userService.checkPassword = jest
+        .fn()
+        .mockResolvedValue(checkPasswordResult);
+
+      const result = await resolver.checkPassword(userId, password);
+      expect(result).toBe(checkPasswordResult);
+    });
   });
 });

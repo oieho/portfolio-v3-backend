@@ -6,6 +6,7 @@ import {
   Put,
   HttpCode,
   HttpException,
+  BadRequestException,
   Body,
   Res,
   Patch,
@@ -71,8 +72,33 @@ export class UserController {
   }
 
   @ApiOperation({
+    summary: '회원정보수정 전 아이디와 일치하는 비밀번호 조회',
+    description:
+      '매개변수 password와 아이디로 얻어 낸 해싱암호가 일치하면 true 리턴',
+  })
+  @ApiBody({
+    required: true,
+    schema: {
+      example: {
+        userId: 'user11',
+        password: '1',
+      },
+    },
+  })
+  @Post('/modify/confirmPw')
+  async confirmPassword(
+    @Body('userId') userId: string,
+    @Body('password') password: string,
+  ): Promise<boolean> {
+    if (!userId || !password) {
+      throw new BadRequestException('userId and password are required');
+    }
+    return this.userService.checkPassword(userId, password);
+  }
+
+  @ApiOperation({
     summary: '회원정보 수정',
-    description: 'userID에 해당하는 회원 정보 수정',
+    description: '매개변수 userId와 일치하는 엔티티 수정',
   })
   @ApiParam({
     name: 'userId',
@@ -237,7 +263,8 @@ export class UserController {
 
   @ApiOperation({
     summary: '비밀번호 변경',
-    description: '토큰이 검증된 후 비밀번호 변경',
+    description:
+      '1.비밀번호 찾기에서 토큰이 검증된 후 비밀번호를 해싱 암호화하여 변경, 2.회원정보수정 폼의 비밀번호 변경',
   })
   @ApiBody({
     required: true,

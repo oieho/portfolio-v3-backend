@@ -1,14 +1,17 @@
 import { Model } from 'mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
-import { HttpException, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserModule } from './user.module';
 import { UserService } from './user.service';
 import { UserMongoRepository } from './user.repository';
 import { UserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-
 import { UserSchema } from '../schemas/user.schema';
 import { RecoverPassSchema } from '../schemas/recoverPass.schema';
 
@@ -47,23 +50,8 @@ describe('UserService', () => {
           provide: getModelToken('RecoverPass'), // 'RecoverPass'는 Mongoose 모델 이름입니다
           useValue: { recoveryPassToken: jest.fn() }, // 모의 객체 설정
         },
-        {
-          provide: UserMongoRepository,
-          useValue: {
-            find: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            findUser: jest.fn(),
-            findUserId: jest.fn(),
-            findUserName: jest.fn(),
-            findUserEmail: jest.fn(),
-            findUserNameAndUserEmail: jest.fn(),
-            findByUserIdAndUpdate: jest.fn(),
-            hashSync: jest.fn(),
-          },
-        },
+
+        UserMongoRepository,
       ],
     }).compile();
 
@@ -118,7 +106,54 @@ describe('UserService', () => {
       };
     });
 
-    it('createUser - should create a user and return the user dto', async () => {
+    describe('checkPassword before modify', () => {
+      it('should throw BadRequestException if encoded password is not found - [failure]', async () => {
+        jest
+          .spyOn(userMongoRepository, 'findByEncodedPw')
+          .mockResolvedValue(null);
+
+        await expect(
+          service.checkPassword('testUserId', 'testPassword'),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should return false if passwords do not match - [failure]', async () => {
+        const encodedPw = 'encodedPassword';
+        jest
+          .spyOn(userMongoRepository, 'findByEncodedPw')
+          .mockResolvedValue(encodedPw);
+        jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
+
+        const result = await service.checkPassword(
+          'testUserId',
+          'wrongPassword',
+        );
+        expect(result).toBe(false);
+      });
+
+      it('should call existsByUserIdAndUserPw and return its result - [success]', async () => {
+        const encodedPw = 'encodedPassword';
+        jest
+          .spyOn(userMongoRepository, 'findByEncodedPw')
+          .mockResolvedValue(encodedPw);
+        jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
+
+        jest
+          .spyOn(userMongoRepository, 'existsByUserIdAndUserPw')
+          .mockResolvedValue(true);
+
+        const result = await service.checkPassword(
+          'testUserId',
+          'testPassword',
+        );
+        expect(
+          userMongoRepository.existsByUserIdAndUserPw,
+        ).toHaveBeenCalledWith('testUserId', encodedPw);
+        expect(result).toBe(true);
+      });
+    });
+
+    it('createUser - should create a user and return the user dto - [success]', async () => {
       jest.spyOn(userMongoRepository, 'saveUser').mockResolvedValue(userDto);
 
       const result = await service.createUser(userDto);
@@ -127,7 +162,7 @@ describe('UserService', () => {
       expect(result).toEqual(userDto);
     });
 
-    it('should throw an error if user already exists', async () => {
+    it('If duplicated user exists - should throw an error if user already exists - [failure]', async () => {
       jest
         .spyOn(userMongoRepository, 'findUser')
         .mockResolvedValue(userDto.userId);
@@ -137,7 +172,7 @@ describe('UserService', () => {
       );
     });
 
-    it('should modify user successfully', async () => {
+    it('should modify user successfully - [success]', async () => {
       jest.spyOn(userMongoRepository, 'findUser').mockResolvedValue(userDto);
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
       jest
@@ -187,17 +222,17 @@ describe('UserService', () => {
         });
     });
 
-    it('should return user entity if userId matches some entity', async () => {
+    it('should return user entity if userId matches some entity - [success]', async () => {
       const result = await service.findUser(userId);
       expect(result).toEqual(resultUser);
     });
 
-    it('should return userInfo(entity) if userId matches some entity', async () => {
+    it('should return userInfo(entity) if userId matches some entity - [success]', async () => {
       const result = await service.findUser(userId);
       expect(result).toEqual(resultUser);
     });
 
-    it('should return userInfo(entity) if userId matches some entity', async () => {
+    it('should return userInfo(entity) if userId matches some entity - [success]', async () => {
       const userId = 'user11';
       jest
         .spyOn(userMongoRepository, 'findUser')
@@ -214,7 +249,7 @@ describe('UserService', () => {
       expect(result).toEqual(resultUser);
     });
 
-    it('should return userId if userId exists', async () => {
+    it('should return userId if userId exists - [success]', async () => {
       const name = '사용자22';
       const mockUser = 'user22';
 
@@ -233,7 +268,7 @@ describe('UserService', () => {
     });
   });
 
-  describe('findUserByCriteria', () => {
+  describe('findUserByCriteria - [success]', () => {
     it('should return a user if found', async () => {
       // 테스트 데이터
       const mockUser = {
@@ -274,7 +309,7 @@ describe('UserService', () => {
   describe('findPasswordByToken', () => {
     const mockToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
     const resultToken = '3080161f-6d21-4056-8c25-0fa1670d35e6';
-    it('should generate a token and save it using userRepository', async () => {
+    it('should generate a token and save it using userRepository - [success]', async () => {
       (uuidv4 as jest.Mock).mockReturnValue(mockToken);
 
       const recoveryPassTokenSpy = jest
@@ -286,7 +321,7 @@ describe('UserService', () => {
       expect(result).toBe(resultToken);
       expect(recoveryPassTokenSpy).toHaveBeenCalledWith(mockToken);
     });
-    it('qualifyByToken - should throw NotFoundException if token does not exist', async () => {
+    it('qualifyByToken - should throw NotFoundException if token does not exist - [failure]', async () => {
       jest.spyOn(recoverPassModel, 'findOne').mockImplementation(() => {
         return {
           exec: jest.fn().mockResolvedValue(null),
@@ -298,7 +333,7 @@ describe('UserService', () => {
       );
     });
 
-    it('qualifyByToken - should return success message if token exists', async () => {
+    it('qualifyByToken - should return success message if token exists - [success]', async () => {
       jest.spyOn(recoverPassModel, 'findOne').mockImplementation(() => {
         return {
           exec: jest.fn().mockResolvedValue({ resetToken: mockToken }),
@@ -324,7 +359,7 @@ describe('UserService', () => {
       );
     });
 
-    it('verifyToken - should return true if token exists', async () => {
+    it('verifyToken - should return true if token exists - [success]', async () => {
       jest.spyOn(recoverPassModel, 'findOne').mockImplementation(() => {
         return {
           exec: jest.fn().mockResolvedValue({ resetToken: mockToken }),
@@ -334,7 +369,7 @@ describe('UserService', () => {
       expect(result).toEqual(true);
     });
 
-    it('removeRecoverPassToken - should call deleteOne with the correct token', async () => {
+    it('removeRecoverPassToken - should call deleteOne with the correct token - [success]', async () => {
       jest.spyOn(recoverPassModel, 'deleteOne').mockImplementation(() => {
         return {
           exec: jest.fn().mockResolvedValue({ deletedCount: 1 }),
@@ -351,7 +386,7 @@ describe('UserService', () => {
       });
     });
 
-    it('changePassword - should hash the password and call changePassword', async () => {
+    it('changePassword - should hash the password and call changePassword - [success]', async () => {
       const userId = 'user11';
       const password = '1';
       const hashedPassword =

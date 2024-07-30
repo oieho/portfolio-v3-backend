@@ -62,7 +62,7 @@ describe('EmailController', () => {
     // 테스트 이후에 업로드된 파일 삭제 등의 정리 작업이 필요하다면 추가할 수 있습니다.
   });
 
-  it('sendEmail - should send email successfully', async () => {
+  it('sendEmail - should send email successfully - [success]', async () => {
     const sender = 'test@oieho.com';
     const subject = 'Test Email';
     const emailAddress = 'admin@oieho.com';
@@ -125,7 +125,7 @@ describe('EmailController', () => {
     expect(result).toEqual({ message: 'Email sent successfully!' });
   });
 
-  it('findId - should send email by userEmail to get userID by userName successfully', async () => {
+  it('findId - should send email by userEmail to get userID by userName successfully - [success]', async () => {
     const userName = '사용자22';
     const userEmail = 'user22@oieho.com';
 

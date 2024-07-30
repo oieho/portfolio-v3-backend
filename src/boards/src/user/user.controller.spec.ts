@@ -135,7 +135,7 @@ describe('UserController', () => {
         modDate: new Date(),
       };
 
-      it('register - should register a new user', async () => {
+      it('register - should register a new user - [success]', async () => {
         const result = { ...userDto, userId: userId };
 
         jest.spyOn(userService, 'register').mockResolvedValue(userDto);
@@ -146,7 +146,7 @@ describe('UserController', () => {
         expect(response).toEqual(resultUserDto);
       });
 
-      it('modify - should return the userInfo if user is modified', async () => {
+      it('modify - should return the userInfo if user is modified - [success]', async () => {
         jest
           .spyOn(userService, 'modifyUserByUserId')
           .mockResolvedValue(userDto);
@@ -160,7 +160,7 @@ describe('UserController', () => {
         expect(result).toEqual(expect.objectContaining(resultUserDto));
       });
 
-      it('userInfo - should get userInfo if userId is provided', async () => {
+      it('userInfo - should get userInfo if userId is provided - [success]', async () => {
         const accessToken = await authService.generateAccessToken(userDto);
         jest
           .spyOn(authService, 'getAccessToken')
