@@ -13,6 +13,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BoardModule } from './board/board.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       { name: 'RecoverPass', schema: RecoverPassSchema },
     ]),
     EmailModule,
+    BoardModule,
   ],
 
   controllers: [AppController],
