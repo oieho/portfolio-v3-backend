@@ -1,0 +1,24 @@
+{
+  "name": "portfolio-v3-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "boards": "pnpm --filter boards run dev",
+    "messageBox": "pnpm -C src/messageBox run dev",
+    "dev": "pnpm -r dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/multer": "^1.4.11",
+    "apollo-server-express": "^3.13.0",
+    "graphql": "^16.9.0",
+    "multer": "1.4.5-lts.1",
+    "prettier": "^3.0.0",
+    "redis": "^4.6.15",
+    "typescript": "^5.1.3"
+  }
+}

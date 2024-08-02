@@ -5,6 +5,7 @@ import {
   MaxLength,
   MinLength,
   IsAlphanumeric,
+  IsEnum,
 } from 'class-validator';
 import { Model, Types } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
@@ -42,6 +43,18 @@ export class IdAndEmailCheckSendsEmail {
 
   @Field()
   sentEmail: boolean;
+}
+
+export enum SocialMediaEnum {
+  KAKAO = 'K',
+  NAVER = 'N',
+  GOOGLE = 'G',
+  LOCAL = '',
+}
+
+export enum RoleEnum {
+  MEMBER = 'Member',
+  ADMIN = 'Administrator',
 }
 
 @ObjectType()
@@ -92,9 +105,11 @@ export class UserDto {
   @IsNotEmpty()
   @ApiProperty({
     description: '소셜 미디어로 가입 여부',
-    default: 'G(Google), N(Naver), K(Kakao)',
+    enum: SocialMediaEnum,
+    default: SocialMediaEnum.LOCAL,
     required: true,
   })
+  @IsEnum(SocialMediaEnum)
   socialMedia: string;
 
   @Field()
@@ -102,9 +117,11 @@ export class UserDto {
   @IsNotEmpty()
   @ApiProperty({
     description: '사용자 역할',
-    default: 'MEMBER, ADMIN',
+    enum: RoleEnum,
+    default: RoleEnum.MEMBER,
     required: true,
   })
+  @IsEnum(SocialMediaEnum)
   role: string;
 
   @Field()

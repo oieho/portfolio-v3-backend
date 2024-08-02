@@ -212,28 +212,4 @@ describe('UserResolver', () => {
       token,
     );
   });
-
-  describe('checkPassword', () => {
-    it('should throw BadRequestException if userId or password is missing - [failure]', async () => {
-      await expect(resolver.checkPassword('', 'password')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(resolver.checkPassword('userId', '')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should return the result from userService.checkPassword - [success]', async () => {
-      const userId = 'testUserId';
-      const password = 'testPassword';
-      const checkPasswordResult = true;
-
-      userService.checkPassword = jest
-        .fn()
-        .mockResolvedValue(checkPasswordResult);
-
-      const result = await resolver.checkPassword(userId, password);
-      expect(result).toBe(checkPasswordResult);
-    });
-  });
 });

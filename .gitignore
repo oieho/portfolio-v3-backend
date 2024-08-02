@@ -1,3 +1,4 @@
 .history/
 /node_modules
 /src
+/src/boards/node_modules
